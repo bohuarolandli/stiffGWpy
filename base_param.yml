@@ -1,0 +1,25 @@
+#######   Cosmology: Planck 2018 + BAO   #######
+
+Omega_bh2: 0.02242
+# measured by relative peak heights, sub-percent error
+
+Omega_ch2: 0.11933
+
+H0: 67.66 
+# km s^-1 Mpc^-1
+
+DN_eff: 0
+
+#######    Inflation: Planck 2018 + BK18   #######
+
+A_s: 2.105e-9
+
+r: 0.036
+
+#######    Reheating and Stiff Era    #######
+
+T_re: 1.0e+4
+# GeV
+
+T_sr: 3.0e-3
+# GeV, equality temperature at rho_stiff = rho_{ordinary radiation} 
