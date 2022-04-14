@@ -197,6 +197,6 @@ class LCDM_SN:
         
         self.f = f * math.log10(math.exp(1)) + math.log10(f_yr)       # Convert output frequency in log10(f/Hz)
         self.Nv = Nv
-        self.N = Nv - N_inf
+        self.N = Nv - Nv[-1]
         self.sigma = Sv
         self.f_hor = fv * math.log10(math.exp(1)) + math.log10(f_yr)
