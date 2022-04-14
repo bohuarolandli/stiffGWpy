@@ -60,18 +60,24 @@ model.SGWB_iter()
 
 ### Output ###
 
-Output attributes after successfully running obj_name.SGWB_iter():
+Output attributes after successfully running SGWB_iter():
     
-- f:             sampled frequencies for SGWB calculation, log10(f/Hz) 
+- f:             sampled frequencies of the SGWB today, log10(f/Hz) 
 - Ogw_today:     present-day energy spectrum of the primordial SGWB
-- N:             = ln a, number of e-foldings
-- sigma:         = 1+w, which characterizes the expansion history 
-- f_hor:         evolution of the current mode that fills the horizon, log10(f_hor/Hz), f_hor = aH/(2*pi)
-- hubble:        evolution of the Hubble parameter, log10(H /s^-1). Last element is the present-day value.
 - stiff_to_photon_MeV: ratio of the stiff component energy density to that of photons at T = 1 MeV, to be passed to AlterBBN
-- DN_eff_orig:   original value of &Delta;N_eff from the input when the run is successful, otherwise set to None
-- DN_gw:         evolution of &Delta;N_eff due to the primordial SGWB. Last element is the present-day value.
-- SGWB_converge: True if SGWB_iter() is run and successfully converged, False if not (when the total &Delta;N_eff > 5, excluded)
+- DN_eff_orig:   original value of &Delta;N_eff from the input when the run is successful, otherwise set to None.
+<br/>
+
+- N:             = ln a, number of e-foldings, the time coordinate for variables below (N=0 is the present)
+- sigma:         = 1+w, which characterizes the expansion history 
+- f_hor:         comoving frequency of the current mode that fills the horizon, log10(f_hor/Hz), f_hor = aH/(2*pi)
+- hubble:        evolution of the Hubble parameter, log10(H/s^-1). 
+- DN_gw:         evolution of &Delta;N_eff due to the primordial SGWB. 
+
+
+Other attributes:
+
+- SGWB_converge: True if SGWB_iter() successfully converges, False if not (abort when the total &Delta;N_eff > 5).
 
 
 \
