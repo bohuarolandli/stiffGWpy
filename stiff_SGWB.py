@@ -75,12 +75,12 @@ class LCDM_SG(LCDM_SN):
         for i in range(n_f):
 
             j = 0
-            while ((self.f[i]+3) < self.fv[j]) and (j<n_v):  # solver begins at k/aH < 10^{-3}
+            while ((self.f[i]+3) < self.f_hor[j]) and (j<n_v):  # solver begins at k/aH < 10^{-3}
                 j = j+1
             if (j >= 1): j = j-1   
 
-            z0 = (self.f[i]-self.fv[j])*math.log(10)         # convert to ln(2*pi*f*c/aH)
-            result = solve_SGWB(self.Nv, self.Sv, j, z0)
+            z0 = (self.f[i]-self.f_hor[j])*math.log(10)         # convert to ln(2*pi*f*c/aH)
+            result = solve_SGWB(self.Nv, self.sigma, j, z0)
             
             N_this = self.Nv[(self.Nv >= result.sol.t_min) & (self.Nv <= result.sol.t_max)]
             [zf_this, xf_this, yf_this] = result.sol(N_this)
@@ -92,7 +92,7 @@ class LCDM_SG(LCDM_SN):
             # high-frequency, post-horizon-reentry regime
             if (N_this[-1]<self.Nv[-1]):
                 N_hf = self.Nv[self.Nv > N_this[-1]]
-                f_hf = self.fv[self.Nv > N_this[-1]]
+                f_hf = self.f_hor[self.Nv > N_this[-1]]
         
                 coeff = math.sqrt(0.5*(xf_this[-1]**2+yf_this[-1]**2))
                 Th_hf = coeff * np.exp(-zf_this[-1] + N_this[-1] - N_hf)      # the rms T_h, time-averaged
@@ -151,8 +151,8 @@ class LCDM_SG(LCDM_SN):
 
             print(DN_gw_new, self.DN_gw, self.cosmo_param['DN_eff']) 
             self.SGWB_converge = True           
-            self.hubble = math.log10(2*math.pi) + self.fv + math.log10(math.exp(1)) * (self.Nv[-1]-self.Nv)    # log10(H/s^-1), H = 2pi * fv / a 
-            self.DN_gw = Neff0/Omega_nu * np.multiply(self.g2, np.exp(2*(self.fv-self.fv[-1])*math.log(10)+2*(self.Nv-self.Nv[-1])))
+            self.hubble = math.log10(2*math.pi) + self.f_hor + math.log10(math.exp(1)) * (self.Nv[-1]-self.Nv)    # log10(H/s^-1), H = 2pi * f_hor / a 
+            self.DN_gw = Neff0/Omega_nu * np.multiply(self.g2, np.exp(2*(self.f_hor-self.f_hor[-1])*math.log(10)+2*(self.Nv-self.Nv[-1])))
             # Obtain the entire evolution of the DN_eff due to SGWB. Now DN_gw[-1] + DN_eff_orig = cosmo_param['DN_eff']
 
             self.get_today()
