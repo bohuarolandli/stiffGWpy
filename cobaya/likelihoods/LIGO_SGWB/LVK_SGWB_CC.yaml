@@ -1,0 +1,44 @@
+# The options and parameters defined in this associated yaml file 
+# are only recognized by the likelihood as its class variables/attributes.
+# They are loaded automatically with their default values or priors 
+# by simply mentioning the likelihood in the input of the Cobaya run, 
+# and will be overridden by redefinitions from the input. 
+# Private class attributes that cannot be changed by input parameters should start with an underscore.
+
+### Default options
+
+# Theory or likelihood class options are inherited from any ancestor class .yaml files or class attributes. 
+# So there are some user-defined options that are common to all classes 
+# and do not need to be specified in the defaults [ClassName].yaml file, e.g., the computational speed 
+
+path: null
+CC_file: likelihoods/LIGO_SGWB/C_O1_O2_O3.dat
+# Aliases for automatic covariance matrix
+aliases: [LVK_O1_O2_O3_CC]
+# Speed in evaluations/second (after theory inputs calculated).
+speed: 500
+
+
+### Default values or priors of experimental model parameters (nuisance parameters), 
+### accounting for instrumental errors, foregrounds, etc.
+### Derived parameters are also specified here.
+
+# For example, Planck likelihood parameters (or nuisance parameters). 
+# They typically do not appear in the Cobaya input: they are included automatically at run time.
+# However, one is still allowed to add them to the input to redefine any of their properties. 
+
+params:
+#  N_eff: 
+#    derived: True
+#    latex: N_\mathrm{eff}
+#  my_foreground_amp:
+#    prior:
+#      dist: uniform
+#      min: 0
+#      max: 100
+#    ref:
+#      dist: norm
+#      loc: 153
+#      scale: 27
+#    proposal: 27
+#    latex: A^{f}_{\rm{mine}}

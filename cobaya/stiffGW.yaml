@@ -1,0 +1,31 @@
+# The options and parameters defined in this associated yaml file 
+# are only recognized by the theory as its class variables/attributes.
+# They are loaded automatically with their default values or priors 
+# by simply mentioning the theory in the input of the Cobaya run, 
+# and will be overridden by redefinitions from the input. 
+# Private class attributes that cannot be changed by input parameters should start with an underscore.
+
+### Default options
+
+# Theory or likelihood class options are inherited from any ancestor class .yaml files or class attributes. 
+# So there are some user-defined options that are common to all classes 
+# and do not need to be specified in the defaults [ClassName].yaml file, e.g., the computational speed 
+
+# Path to local theory code, if desired,
+# or 'global' to force global-scope import
+path: null
+# Speed in evaluations/second
+speed: 0.1
+
+
+### Default values or priors of nuisance parameters of the theoretical model
+### Derived parameters are also specified here.
+
+params:
+#  Delta_Neff_GW:
+#    derived: True
+#    latex: \Delta N_{eff,GW}
+#  kappa_stiff: 
+#    value: .05
+#    derived: True
+#    latex: (\rho_s/\rho_\gamma)(T=1~\mathrm{MeV})
