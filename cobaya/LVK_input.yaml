@@ -1,14 +1,13 @@
 theory:
   stiffGW:
     python_path: .
-    provides:
-    - f
-    - omGW_stiff
+#    provides:
+#    - f
+#    - omGW_stiff
 
 likelihood:
   LVK_SGWB_CC:
     python_path: ./likelihoods/LIGO_SGWB
-  
   
 params:
   Omega_bh2:
@@ -41,9 +40,18 @@ params:
       scale: 3.0
     proposal: 1.0
     latex: H_0
+  h: 
+    derived: 'lambda H0: H0/100'
+    latex: h
   DN_eff: 
     value: 0
     latex: \Delta N_\mathrm{eff}
+  N_eff: 
+    min: 3.046
+  Delta_Neff_GW:
+    derived: True
+    min: 0
+    latex: \Delta N_\mathrm{eff,GW}
   logA:
     prior:
       min: 1.61
@@ -58,61 +66,58 @@ params:
   A_s:
     value: 'lambda logA: 1e-10*np.exp(logA)'
     latex: A_\mathrm{s}
-  logr:
-    prior:
-      min: -4
-      max: -1
-    ref:
-      dist: norm
-      loc: -2
-      scale: 1
-    proposal: 0.5
-    latex: \log_{10}r
-    drop: True
   r:
-    value: 'lambda logr: np.power(10, logr)'
-    latex: r
-  logT_re: 
     prior:
-      min: -2.5
-      max: 4.0
+      min: 0
+      max: 0.1
+    ref:
+      dist: uniform
+      loc: 0
+      scale: 0.03
+    proposal: 0.01
+    latex: r
+  logT_re:
+    prior:
+      min: -6.0
+      max: 20.0
     ref:
       dist: norm
-      loc: 1.0
+      loc: 5.0
       scale: 2.0
     proposal: 0.5
-    latex: \log_{10}(T_\mathrm{re}/\mathrm{GeV})
+    latex: \log(T_\mathrm{re}/\mathrm{GeV})
     drop: True
   T_re:
-    value: 'lambda logT_re: np.power(10, logT_re)'
+    value: 'lambda logT_re: np.exp(logT_re)'
     latex: T_\mathrm{re}
-  logT_sr:
+  logT_sr: 
     prior:
-      min: -4.0
-      max: 3.0
+      min: -9.0
+      max: 0.0
     ref:
       dist: norm
-      loc: -1.0
+      loc: -6.0
       scale: 1.0
     proposal: 0.5
-    latex: \log_{10}(T_\mathrm{sr}/\mathrm{GeV})
+    latex: \log(T_\mathrm{sr}/\mathrm{GeV})
     drop: True
   T_sr:
-    value: 'lambda logT_sr: np.power(10, logT_sr)'
+    value: 'lambda logT_sr: np.exp(logT_sr)'
     latex: T_\mathrm{sr}
 
 prior:
-  T_re_gt_T_sr: 'lambda T_re, T_sr: np.heaviside(T_re-T_sr, 1)*1e10-1e10'
+#  Jacobian: 'lambda logA, logT_re, logT_sr: logA + logT_re + logT_sr'
+#  T_re_gt_T_sr: 'lambda T_re, T_sr: np.heaviside(T_re-T_sr, 1)*1e10-1e10'
 
 sampler:
   mcmc:
-    #drag: True
-    #oversample_power: 0.4
-    max_tries: 40d
+#    drag: True
+#    oversample_power: 0.4
+    max_tries: 50d
     proposal_scale: 1.9
     covmat: auto
     Rminus1_stop: 0.01
-    Rminus1_cl_stop: 0.2
+    Rminus1_cl_stop: 0.16
     output_every: 600s
     learn_every: 20d
     learn_proposal: True

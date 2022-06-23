@@ -28,9 +28,9 @@ speed: 500
 # However, one is still allowed to add them to the input to redefine any of their properties. 
 
 params:
-#  N_eff: 
-#    derived: True
-#    latex: N_\mathrm{eff}
+  N_eff: 
+    derived: True
+    latex: N_\mathrm{eff}
 #  my_foreground_amp:
 #    prior:
 #      dist: uniform

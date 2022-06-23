@@ -39,8 +39,8 @@ class LVK_SGWB_CC(Likelihood):
         f_theory = self.provider.get_result('f'); f_theory = np.flip(f_theory)
         Ogw_theory = self.provider.get_result('omGW_stiff'); Ogw_theory = np.flip(Ogw_theory)
         
-        #if _derived is not None:
-        #    _derived["N_eff"] = self.provider.get_param('Delta_Neff_GW')+3.046
+        if _derived is not None:
+            _derived['N_eff'] = self.provider.get_param('Delta_Neff_GW')+3.046
         
         return self.log_likelihood(f_theory, Ogw_theory, **params_values)
 
@@ -54,21 +54,17 @@ class LVK_SGWB_CC(Likelihood):
         Cf_LVK = self.data[:,1]
         sigma_LVK = self.data[:,2]
         
-        if f_theory[-1]>=f_LVK[-1]:
-            pass
-        elif f_theory[-1]>=f_LVK[0]:
+        Ogw_Model = np.zeros_like(Cf_LVK)
+        if f_theory[-1]>=f_LVK[0]:
+            f_t = f_theory[(f_theory >= -5)]; Ogw_t = Ogw_theory[(f_theory >= -5)]
+            #print(f_t, Ogw_t)
+            spec = interpolate.interp1d(f_t, Ogw_t, kind='cubic')
+            
             cond = (f_LVK<=f_theory[-1])
-            f_LVK = f_LVK[cond]; Cf_LVK = Cf_LVK[cond]; sigma_LVK = sigma_LVK[cond]
-        else:
-            self.log.debug("Max frequency of the primordial SGWB is below the LIGO band. "
-                           "Assigning 0 likelihood and going on.")
-            return False
-        
-        f_t = f_theory[(f_theory>=0)]; Ogw_t = Ogw_theory[(f_theory>=0)]
-        spec = interpolate.interp1d(f_t, Ogw_t, kind='cubic')        
-        Ogw_at_LVK = np.power(10, spec(f_LVK))
-        
-        chi2_array = np.square(np.divide((Cf_LVK-Ogw_at_LVK), sigma_LVK))
+            Ogw_Model[cond] = np.power(10, spec(f_LVK[cond]))       
+        #print(Ogw_Model)
+             
+        chi2_array = np.square(np.divide((Cf_LVK-Ogw_Model), sigma_LVK))
         chi2 = sum(chi2_array)
         
         return -chi2 / 2

@@ -29,11 +29,8 @@ class LCDM_SG(LCDM_SN):
     
     Once a successful 'SGWB_iter' calculation has been performed for an instance, 
     if for some reason you would like to reuse this instance with a new set of 
-    parameters, you may modify the parameters by changing the values in the 
-    'obj_name.cosmo_param[]' dictionary. However, in this case, MAKE SURE that 
-    you set 'obj_name.cosmo_param['DN_eff']' at the desired value (e.g., 0) and 
-    run 'obj_name.reset()' right after those modifications in order to reset 
-    the status of the SGWB calculation.
+    parameters, you MUST run 'obj_name.reset()' first to reset the status, and 
+    then modify the 'obj_name.cosmo_param' dictionary with desired values.
     
     """
     def __init__(self, *args, 
@@ -43,7 +40,9 @@ class LCDM_SG(LCDM_SN):
       
         
     def reset(self):
-        #LCDM_SN.derived_param(self)        
+        #LCDM_SN.derived_param(self)  
+        if hasattr(self, 'DN_eff_orig') and (self.DN_eff_orig is not None):
+            self.cosmo_param['DN_eff'] = self.DN_eff_orig
         self.DN_eff_orig = None
         self.SGWB_converge = False     # Whether the SGWB has been successfully computed     
         

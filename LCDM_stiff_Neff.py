@@ -126,10 +126,11 @@ class LCDM_SN:
 
         #####    Load thermal history    #####
 
-        Nref = np.log(np.array([x.split()[0] for x in open('th.txt').readlines()], dtype=float)) + Nv[-1]
-        Tref = np.array([x.split()[1] for x in open('th.txt').readlines()], dtype=float) * 1e-6     # T_photon in MeV
-        Sref = np.array([x.split()[2] for x in open('th.txt').readlines()], dtype=float)
-        Eref = np.array([x.split()[3] for x in open('th.txt').readlines()], dtype=float)
+        th_file = os.path.dirname(__file__) + '/th.txt'
+        Nref = np.log(np.array([x.split()[0] for x in open(th_file).readlines()], dtype=float)) + Nv[-1]
+        Tref = np.array([x.split()[1] for x in open(th_file).readlines()], dtype=float) * 1e-6     # T_photon in MeV
+        Sref = np.array([x.split()[2] for x in open(th_file).readlines()], dtype=float)
+        Eref = np.array([x.split()[3] for x in open(th_file).readlines()], dtype=float)
         #  Entropy and energy density of photons, elections and positrons
 
         spline_Sref = interpolate.InterpolatedUnivariateSpline(Nref, Sref)

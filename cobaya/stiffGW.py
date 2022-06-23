@@ -39,7 +39,7 @@ class stiffGW(Theory):
 #            return {'B': {'kmax': requirements['A'].get('kmax', 10)}}
         
     def get_can_provide(self):
-        return ['f', 'omGW_stiff']
+        return ['f', 'omGW_stiff',]
 
     def get_can_provide_params(self):
         return ['Delta_Neff_GW', 'kappa_stiff']
@@ -53,22 +53,26 @@ class stiffGW(Theory):
         """
         
         # Set parameters
-        args = {p:v for p,v in params_values_dict.items()}
+        self.stiffGW_model.reset()
+        args = {p: v for p, v in params_values_dict.items()}
         self.log.debug("Setting parameters: %r", args)
         #print(params_values_dict)
         for key in self.stiffGW_model.cosmo_param:
             if key in params_values_dict:
                 self.stiffGW_model.cosmo_param[key] = params_values_dict[key]
-        #self.stiffGW_model.reset()
+        if self.stiffGW_model.cosmo_param['T_sr']>self.stiffGW_model.cosmo_param['T_re']:
+            self.log.debug("T_sr cannot be greater than T_re. "
+                           "Assigning 0 likelihood and going on.")
+            return False
         
         # Compute!
         self.stiffGW_model.SGWB_iter()
         
         if self.stiffGW_model.SGWB_converge:
-            state['f'] = self.stiffGW_model.f     # Output frequency in log10(f/Hz)
-            state['omGW_stiff'] = np.log10(self.stiffGW_model.Ogw_today
-                                           - self.stiffGW_model.Oj_today)  # log10(Omega_GW(f))
+            state['f'] = self.stiffGW_model.f                                              # Output frequency in log10(f/Hz)
+            state['omGW_stiff'] = np.log10(self.stiffGW_model.Ogw_today - self.stiffGW_model.Oj_today)  # log10(Omega_GW(f))
             # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
+            
             if want_derived:
                 state['derived'] = {'Delta_Neff_GW': self.stiffGW_model.DN_gw[-1], # Delta N_eff due to the primordial SGWB today
                                     "kappa_stiff": self.stiffGW_model.stiff_to_photon_MeV}         
