@@ -29,11 +29,11 @@ class LVK_SGWB_CC(Likelihood):
     
     def logp(self, _derived=None, **params_values):
         """
-        The default Likelihood implementation does the calculation in this 'logp()' function, which is 
-        then called by 'Likelihood.calculate()' to save the log likelihood into "state['logp']" 
+        The default implementation of the Likelihood class does the calculation in this 'logp()' function, 
+        which is called by 'Likelihood.calculate()' to save the log likelihood into "state['logp']" 
         (the latter may be more convenient if you also need to calculate some derived parameters).
         
-        'logp()' takes a dictionary (as keyword arguments) of nuisance parameter values, 'params_values', 
+        'logp()' can take a dictionary (as keyword arguments) of nuisance parameter values, 'params_values', 
         (if there is any), and returns a log-likelihood.
         """
         f_theory = self.provider.get_result('f'); f_theory = np.flip(f_theory)

@@ -148,7 +148,7 @@ class LCDM_SG(LCDM_SN):
                 self.DN_gw = DN_gw_new
                 
 
-            print(DN_gw_new, self.DN_gw, self.cosmo_param['DN_eff']) 
+            #print(DN_gw_new, self.DN_gw, self.cosmo_param['DN_eff']) 
             self.SGWB_converge = True           
             self.hubble = math.log10(2*math.pi) + self.f_hor + math.log10(math.exp(1)) * (self.Nv[-1]-self.Nv)    # log10(H/s^-1), H = 2pi * f_hor / a 
             self.DN_gw = Neff0/Omega_nu * np.multiply(self.g2, np.exp(2*(self.f_hor-self.f_hor[-1])*math.log(10)+2*(self.Nv-self.Nv[-1])))

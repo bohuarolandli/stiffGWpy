@@ -125,7 +125,7 @@ sampler:
     learn_proposal_Rminus1_max_early: 30.0
     learn_proposal_Rminus1_min: 0.0
 
-debug_file: logs/LVK_Delta_logT_log.txt
+debug_file: logs/Delta_logT.debug
 
 force: True
 output: chains/Delta_logT

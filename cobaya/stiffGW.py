@@ -39,7 +39,7 @@ class stiffGW(Theory):
 #            return {'B': {'kmax': requirements['A'].get('kmax', 10)}}
         
     def get_can_provide(self):
-        return ['f', 'omGW_stiff',]
+        return ['f', 'omGW_stiff', 'hubble',]
 
     def get_can_provide_params(self):
         return ['Delta_Neff_GW', 'kappa_stiff']
@@ -72,6 +72,7 @@ class stiffGW(Theory):
             state['f'] = self.stiffGW_model.f                                              # Output frequency in log10(f/Hz)
             state['omGW_stiff'] = np.log10(self.stiffGW_model.Ogw_today - self.stiffGW_model.Oj_today)  # log10(Omega_GW(f))
             # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
+            state['hubble'] = self.stiffGW_model.derived_param['H_0']         # H_0 in units of s^-1    
             
             if want_derived:
                 state['derived'] = {'Delta_Neff_GW': self.stiffGW_model.DN_gw[-1], # Delta N_eff due to the primordial SGWB today

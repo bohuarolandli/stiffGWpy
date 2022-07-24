@@ -1,0 +1,133 @@
+theory:
+  stiffGW:
+    python_path: .
+#    provides:
+#    - f
+#    - omGW_stiff
+
+likelihood:
+  LVK_SGWB_CC:
+    python_path: ./likelihoods/LIGO_SGWB
+  IPTA_delay:
+    python_path: ./likelihoods/PTA
+  
+params:
+  Omega_bh2:
+    prior:
+      min: 0.005
+      max: 0.1
+    ref:
+      dist: norm
+      loc: 0.0224
+      scale: 0.0001
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  Omega_ch2:
+    prior:
+      min: 0.001
+      max: 0.99
+    ref:
+      dist: norm
+      loc: 0.12
+      scale: 0.001
+    proposal: 0.0005
+    latex: \Omega_\mathrm{c} h^2
+  H0:
+    prior:
+      min: 20
+      max: 100
+    ref:
+      dist: norm
+      loc: 70
+      scale: 3.0
+    proposal: 1.0
+    latex: H_0
+  h: 
+    derived: 'lambda H0: H0/100'
+    latex: h
+  DN_eff: 
+    value: 0
+    latex: \Delta N_\mathrm{eff}
+  N_eff: 
+    min: 3.046
+  Delta_Neff_GW:
+    derived: True
+    min: 0
+    latex: \Delta N_\mathrm{eff,GW}
+  logA:
+    prior:
+      min: 1.61
+      max: 3.91
+    ref:
+      dist: norm
+      loc: 3.05
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: True
+  A_s:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+  r:
+    prior:
+      min: 0
+      max: 0.3
+    ref:
+      dist: uniform
+      loc: 0
+      scale: 0.03
+    proposal: 0.005
+    latex: r
+  logT_sr: 
+    prior:
+      min: -9.0
+      max: 9.0
+    ref:
+      dist: norm
+      loc: -5.0
+      scale: 2.0
+    proposal: 0.5
+    latex: \log(T_\mathrm{sr}/\mathrm{GeV})
+    drop: True
+  T_sr:
+    value: 'lambda logT_sr: np.exp(logT_sr)'
+    latex: T_\mathrm{sr}
+  Delta_logT: 
+    prior:
+      min: 0.0
+      max: 18.0
+    ref:
+      dist: uniform
+      loc: 5.0
+      scale: 13.0
+    proposal: 0.5
+    latex: \log(T_\mathrm{re}/T_\mathrm{sr})
+    drop: True
+  T_re:
+    value: 'lambda logT_sr, Delta_logT: np.exp(Delta_logT+logT_sr)'
+    latex: T_\mathrm{re}
+
+prior:
+#  Jacobian: 'lambda logA, Delta_logT, logT_sr: logA + Delta_logT + 2*logT_sr'
+#  T_re_gt_T_sr: 'lambda T_re, T_sr: np.heaviside(T_re-T_sr, 1)*1e10-1e10'
+
+sampler:
+  mcmc:
+#    drag: True
+#    oversample_power: 0.4
+    max_tries: 50d
+    proposal_scale: 1.9
+    covmat: auto
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.16
+    output_every: 600s
+    learn_every: 20d
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 15.0
+    learn_proposal_Rminus1_max_early: 30.0
+    learn_proposal_Rminus1_min: 0.0
+
+debug_file: logs/IPTA_LVK.debug
+
+force: True
+output: chains/IPTA_LVK
