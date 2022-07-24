@@ -17,7 +17,7 @@ freq_file: likelihoods/PTA/crn_frequencies.txt
 # Aliases for automatic covariance matrix
 aliases: [IPTA_dr2]
 # Speed in evaluations/second (after theory inputs calculated).
-speed: 200
+speed: 500
 
 
 ### Default values or priors of experimental model parameters (nuisance parameters), 
