@@ -29,15 +29,16 @@ speed: 500
 # However, one is still allowed to add them to the input to redefine any of their properties. 
 
 params:
-#  my_foreground_amp:
-#    prior:
-#      dist: uniform
-#      min: 0
-#      max: 100
-#    ref:
-#      dist: norm
-#      loc: 153
-#      scale: 27
-#    proposal: 27
-#    latex: A^{f}_{\rm{mine}}
+  # log10(Omega_GW) from the unresolved SGWB from SMBH binary inspirals, at f_yr
+  BBH_amp:
+    prior:
+      dist: uniform
+      min: -17
+      max: -5
+    ref:
+      dist: norm
+      loc: -9
+      scale: 1
+    proposal: 0.5
+    latex: \Omega_{\mathrm{GW,BH}}
 #prior:

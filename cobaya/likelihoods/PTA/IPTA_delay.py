@@ -48,17 +48,25 @@ class IPTA_delay(Likelihood):
         Here f_theory must be increasing.
         """
         IPTA_Ogw_low = self.data - 2*np.log10(H_0)
+        IPTA_Ogw_low_limit = np.min(IPTA_Ogw_low, axis=0)
         KDE = {i: kde(IPTA_Ogw_low[:,i]) for i in range(13)}
 
         cond = (f_theory >= -11) & (f_theory <= -5) 
         f_t = f_theory[cond]; Ogw_t = Ogw_theory[cond]
 
         spec = interpolate.interp1d(f_t, Ogw_t, kind='cubic')
-        Ogw_Model = spec(self.freq)  
-        #print(Ogw_Model)
-             
+        Ogw_prim = spec(self.freq)
+        
+        Ogw_BH = data_params['BBH_amp']
+        yr = 31557600; log_fyr = np.log10(1/yr)
+        Ogw_Model = 10**Ogw_prim + 10**(Ogw_BH + 2/3*(self.freq-log_fyr))
+        Ogw_Model = np.log10(Ogw_Model)
+        #print(Ogw_Model)       
+        
         logL = 0
         for i in range(13):
-            logL += KDE[i].logpdf(Ogw_Model[i])[0]      
+            logL += KDE[i].logpdf(np.max([Ogw_Model[i], IPTA_Ogw_low_limit[i]]))[0]
+            # If Omega_GW(f) is smaller than the lower limit from the PTA prior, 
+            # use the lower limit to calculate the logpdf instead.
         
         return logL

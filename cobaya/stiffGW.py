@@ -3,6 +3,7 @@ from cobaya.tools import load_module
 from cobaya.log import LoggedError, get_logger
 import numpy as np
 import sys, os
+from mpi4py import MPI
 #from pathlib import Path
 
 class stiffGW(Theory):
@@ -12,8 +13,9 @@ class stiffGW(Theory):
         stiff_SGWB_path = os.path.dirname(__file__) + '/../'
         stiff_SGWB = load_module('stiff_SGWB', path=stiff_SGWB_path)
         self.stiffGW_model = stiff_SGWB.LCDM_SG()
+        #self.comm = MPI.COMM_WORLD
+        #self.rank = self.comm.Get_rank()
         self.log.info("Initialized!")
-
 
     def initialize_with_provider(self, provider):
         """
@@ -26,6 +28,7 @@ class stiffGW(Theory):
     def close(self):
         pass
 
+    
     def get_requirements(self):
         """
         Return dictionary of quantities that are always needed by this component 
@@ -56,7 +59,7 @@ class stiffGW(Theory):
         self.stiffGW_model.reset()
         args = {p: v for p, v in params_values_dict.items()}
         self.log.debug("Setting parameters: %r", args)
-        #print(params_values_dict)
+        #print(self.rank, ": ", params_values_dict)
         for key in self.stiffGW_model.cosmo_param:
             if key in params_values_dict:
                 self.stiffGW_model.cosmo_param[key] = params_values_dict[key]
