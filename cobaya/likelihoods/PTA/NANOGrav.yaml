@@ -1,0 +1,60 @@
+# The options and parameters defined in this associated yaml file 
+# are only recognized by the likelihood as its class variables/attributes.
+# They are loaded automatically with their default values or priors 
+# by simply mentioning the likelihood in the input of the Cobaya run, 
+# and will be overridden by redefinitions from the input. 
+# Private class attributes that cannot be changed by input parameters should start with an underscore.
+
+### Default options
+
+# Theory or likelihood class options are inherited from any ancestor class .yaml files or class attributes. 
+# So there are some user-defined options that are common to all classes 
+# and do not need to be specified in the defaults [ClassName].yaml file, e.g., the computational speed 
+
+path: null
+kde_file: likelihoods/PTA/NANOGrav15yr/density.npy
+log10rhogrid_file: likelihoods/PTA/NANOGrav15yr/log10rhogrid.npy
+freq_file: likelihoods/PTA/NANOGrav15yr/freqs.npy
+# Aliases for automatic covariance matrix
+aliases: [NANOGrav15yr]
+# Speed in evaluations/second (after theory inputs calculated).
+speed: 500
+
+
+### Default values or priors of experimental model parameters (nuisance parameters), 
+### accounting for instrumental errors, foregrounds, etc.
+### Derived parameters are also specified here.
+
+# For example, Planck likelihood parameters (or nuisance parameters). 
+# They typically do not appear in the Cobaya input: they are included automatically at run time.
+# However, one is still allowed to add them to the input to redefine any of their properties. 
+
+params:
+  # h_c from the unresolved SGWB from SMBH binary inspirals, at f_yr
+  A_BBH:
+    prior:
+      dist: uniform
+      min: -18
+      max: -14
+    ref:
+      dist: uniform
+      min: -16.5
+      max: -14.5
+    proposal: 0.05
+    latex: \log_{10}\,h_{c,\mathrm{BH}}
+  # gamma from the unresolved SGWB from SMBH binary inspirals, 13/3 in the canonical case
+  gamma_BBH:
+    prior:
+      dist: uniform
+      min: 0
+      max: 7
+    ref:
+      dist: uniform
+      min: 4
+      max: 5
+    proposal: 0.05
+    latex: \gamma_\mathrm{BH}
+prior:
+  # from Afzal et al. 2023
+  GWOnly-Ext: 'lambda A_BBH, gamma_BBH: stats.multivariate_normal.logpdf(
+          [A_BBH, gamma_BBH], mean=[-15.6, 4.7], cov=[[0.28, -0.0026], [-0.0026, 0.12]])'
