@@ -14,11 +14,13 @@ from LCDM_stiff_Neff import LCDM_SN
 
 class LCDM_SG(LCDM_SN):
     """
-    Cosmological model: LCDM + stiff component + SGWB. It is a derived class of LCDM_SN.
-    
+    Cosmological model: LCDM + stiff component + constant Delta N_eff
+
     The free/base parameters of the model are: 
-    'Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'T_re', 'T_sr'.
-    [H0] = km s^-1 Mpc^-1, [T_re] = GeV, [T_sr] = GeV.
+    'Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'n_t', 'f_end', 'cr', 'T_re', 'kappa10'.
+    [H0] = km s^-1 Mpc^-1, [T_re] = GeV, [f_end] = Hz.
+    Set cr > 0 if the consistency relation is assumed, otherwise set cr <= 0 and provide (n_t, f_end).
+    kappa10 := rho_stiff/rho_photon at 10 MeV
 
     There are three ways to instantiate a model with desired base parameters: 
     1. input a yaml file,  2. input a dictionary, 
@@ -47,11 +49,7 @@ class LCDM_SG(LCDM_SN):
         self.SGWB_converge = False     # Whether the SGWB has been successfully computed     
         
         
-    @property
-    def Ogw_min_NG12(self):
-        """ 95% lower limit of log10(Omega_GW) from NANOGrav 12.5yr data """
-        return math.log10(2*math.pi**2/3) + 2*math.log10(f_yr/self.derived_param['H_0'])+2*f_NG12 + 2*hc_NG12
-        
+    #@property
 
         
         
@@ -121,11 +119,22 @@ class LCDM_SG(LCDM_SN):
         for which the extra radiation due to the SGWB is mimicked by a constant Delta N_eff.
         
         """
-        
-        if (self.SGWB_converge == False):
+        # Exclude some corner cases
+        if self.cosmo_param['r'] <= 0:
+            print('Must set a positive r to calculate the inflationary GWs!')
+            return
+            
+        if self.derived_param['N_inf'] is None:
+            print('High-end cutoff frequency has not been set properly.')
+            return
+
+        # Main calculation starts here!
+        if (self.SGWB_converge == False):           
             Omega_nu = Omega_nh2/self.derived_param['h']**2
         
             self.DN_eff_orig = self.cosmo_param['DN_eff']
+            # Record the original input value of DN_eff before entering the iterations
+            
             self.DN_gw = 0; DN_gw_new = 0
             while True:    # main iteration
                 self.gen_expansion()
@@ -136,7 +145,7 @@ class LCDM_SG(LCDM_SN):
                    
                 #print(DN_gw_new, self.DN_gw)
                 if (self.DN_eff_orig + DN_gw_new > 5):
-                    print('Total N_eff too large! Shorten the stiff era to lessen GW amplification.')
+                    print('Total N_eff too large! Shorten the stiff era or lower the blue tilt n_t.')
                     self.cosmo_param['DN_eff'] = self.DN_eff_orig
                     self.DN_eff_orig = None
                     return
@@ -151,8 +160,9 @@ class LCDM_SG(LCDM_SN):
             #print(DN_gw_new, self.DN_gw, self.cosmo_param['DN_eff']) 
             self.SGWB_converge = True           
             self.hubble = math.log10(2*math.pi) + self.f_hor + math.log10(math.exp(1)) * (self.Nv[-1]-self.Nv)    # log10(H/s^-1), H = 2pi * f_hor / a 
-            self.DN_gw = Neff0/Omega_nu * np.multiply(self.g2, np.exp(2*(self.f_hor-self.f_hor[-1])*math.log(10)+2*(self.Nv-self.Nv[-1])))
-            # Obtain the entire evolution of the DN_eff due to SGWB. Now DN_gw[-1] + DN_eff_orig = cosmo_param['DN_eff']
+            self.DN_gw = Neff0 * np.multiply(self.g2, np.exp(2*(self.f_hor-self.f_hor[-1])*math.log(10)+2*(self.Nv-self.Nv[-1]))) / Omega_nu
+            # Obtain the entire evolution of the DN_eff due to SGWB. It is actually rho_GW(N) / (rho_{gamma,0}*7/8*(4/11)**(4/3)).
+            # Now self.DN_gw[-1] + self.DN_eff_orig = self.cosmo_param['DN_eff'].
 
             self.get_today()
             

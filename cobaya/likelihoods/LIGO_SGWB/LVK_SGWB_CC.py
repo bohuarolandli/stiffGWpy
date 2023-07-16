@@ -24,7 +24,7 @@ class LVK_SGWB_CC(Likelihood):
         """
         return dictionary specifying quantities that are always needed and calculated by a theory code
         """
-        return {'f': None, 'omGW_stiff': None, 'Delta_Neff_GW': None, 'kappa_stiff': None}
+        return {'f': None, 'omGW_stiff': None, 'Delta_Neff_GW': None,}
 
     
     def logp(self, _derived=None, **params_values):
@@ -40,7 +40,7 @@ class LVK_SGWB_CC(Likelihood):
         Ogw_theory = self.provider.get_result('omGW_stiff'); Ogw_theory = np.flip(Ogw_theory)
         
         if _derived is not None:
-            _derived['N_eff'] = self.provider.get_param('Delta_Neff_GW')+3.046
+            _derived['N_eff'] = self.provider.get_param('Delta_Neff_GW') + 3.044
         
         return self.log_likelihood(f_theory, Ogw_theory, **params_values)
 

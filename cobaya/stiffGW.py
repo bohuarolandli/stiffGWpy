@@ -34,7 +34,9 @@ class stiffGW(Theory):
         Return dictionary of quantities that are always needed by this component 
         and should be calculated by another component or provided by input parameters.
         """
-        return ['Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'T_re', 'T_sr']
+        return {'Omega_bh2': None, 'Omega_ch2': None, 'H0': None, 'DN_eff': None, 
+                'A_s': None, 'r': None, 'n_t': None, 'f_end': None, 'cr': None, 
+                'T_re': None, 'kappa10': None}
 
 #    def must_provide(self, **requirements):
 #        if 'A' in requirements:
@@ -45,7 +47,7 @@ class stiffGW(Theory):
         return ['f', 'omGW_stiff', 'hubble',]
 
     def get_can_provide_params(self):
-        return ['Delta_Neff_GW', 'kappa_stiff']
+        return ['Delta_Neff_GW', ]
 
     
     def calculate(self, state, want_derived=True, **params_values_dict):
@@ -63,10 +65,6 @@ class stiffGW(Theory):
         for key in self.stiffGW_model.cosmo_param:
             if key in params_values_dict:
                 self.stiffGW_model.cosmo_param[key] = params_values_dict[key]
-        if self.stiffGW_model.cosmo_param['T_sr']>self.stiffGW_model.cosmo_param['T_re']:
-            self.log.debug("T_sr cannot be greater than T_re. "
-                           "Assigning 0 likelihood and going on.")
-            return False
         
         # Compute!
         self.stiffGW_model.SGWB_iter()
@@ -79,7 +77,7 @@ class stiffGW(Theory):
             
             if want_derived:
                 state['derived'] = {'Delta_Neff_GW': self.stiffGW_model.DN_gw[-1], # Delta N_eff due to the primordial SGWB today
-                                    "kappa_stiff": self.stiffGW_model.stiff_to_photon_MeV}         
+                                    }         
         else:
             self.log.debug("SGWB calculation not converged, mostly due to too much stiff amplification. "
                            "Assigning 0 likelihood and going on.")

@@ -16,10 +16,18 @@ A_s: 2.105e-9
 
 r: 0.036
 
+n_t: 0
+
+f_end: 1.0e+8
+# Hz
+
+cr: 0
+# If cr > 0, apply the consistency relation, otherwise use the provided n_t & f_end
+
 #######    Reheating and Stiff Era    #######
 
-T_re: 1.0e+4
+T_re: 1.0e+3
 # GeV
 
-T_sr: 3.0e-3
-# GeV, equality temperature at rho_stiff = rho_{ordinary radiation} 
+kappa10: 1.0
+# rho_stiff/rho_photon at 10 MeV
