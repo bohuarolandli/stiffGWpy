@@ -39,8 +39,8 @@ class LVK_SGWB_CC(Likelihood):
         f_theory = self.provider.get_result('f'); f_theory = np.flip(f_theory)
         Ogw_theory = self.provider.get_result('omGW_stiff'); Ogw_theory = np.flip(Ogw_theory)
         
-        if _derived is not None:
-            _derived['N_eff'] = self.provider.get_param('Delta_Neff_GW') + 3.044
+        #if _derived is not None:
+        #    _derived['N_eff'] = self.provider.get_param('Delta_Neff_GW') + 3.044
         
         return self.log_likelihood(f_theory, Ogw_theory, **params_values)
 
@@ -55,13 +55,14 @@ class LVK_SGWB_CC(Likelihood):
         sigma_LVK = self.data[:,2]
         
         Ogw_Model = np.zeros_like(Cf_LVK)
-        if f_theory[-1]>=f_LVK[0]:
+        if f_theory[-1]>=f_LVK[0]:   # Calculate theoretical Omega_GW ONLY for LIGO frequency bins in its range, i.e., <= f_end
             f_t = f_theory[(f_theory >= -5)]; Ogw_t = Ogw_theory[(f_theory >= -5)]
             #print(f_t, Ogw_t)
             spec = interpolate.interp1d(f_t, Ogw_t, kind='cubic')
             
             cond = (f_LVK<=f_theory[-1])
-            Ogw_Model[cond] = np.power(10, spec(f_LVK[cond]))       
+            Ogw_Model[cond] = np.power(10., spec(f_LVK[cond]))  
+            
         #print(Ogw_Model)
              
         chi2_array = np.square(np.divide((Cf_LVK-Ogw_Model), sigma_LVK))

@@ -16,10 +16,12 @@ class LCDM_SN:
     Cosmological model: LCDM + stiff component + constant Delta N_eff
 
     The free/base parameters of the model are: 
-    'Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'n_t', 'f_end', 'cr', 'T_re', 'kappa10'.
-    [H0] = km s^-1 Mpc^-1, [T_re] = GeV, [f_end] = Hz.
-    Set cr > 0 if the consistency relation is assumed, otherwise set cr <= 0 and provide (n_t, f_end).
-    kappa10 := rho_stiff/rho_photon at 10 MeV
+    'Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'n_t', 'cr', 'T_re', 'DN_re', 'kappa10'.
+    - [H0] = km s^-1 Mpc^-1, [T_re] = GeV.
+    - Set cr > 0 if the consistency relation is assumed, otherwise set cr <= 0 and provide (n_t, DN_re).
+    - DN_re is the number of e-folds from the end of inflation to the end of reheating, 
+      assuming a^{-3} matter-like evolution.
+    - kappa10 := rho_stiff/rho_photon at 10 MeV.
 
     There are three ways to instantiate a model with desired base parameters: 
     1. input a yaml file,  2. input a dictionary, 
@@ -46,7 +48,7 @@ class LCDM_SN:
         else:
             self.cosmo_param = {'Omega_bh2': 0.0223828, 'Omega_ch2': 0.1201075, 'H0': 67.32117, 'DN_eff': 0.,
                                 'A_s': 2.100549e-9, 'r': 0., 'n_t': 0., 'cr': 0,
-                                'T_re': 1e12, 'kappa10': 0., 'f_end': 1e8,
+                                'T_re': 1e12, 'DN_re': 0, 'kappa10': 0., 
                                }    # default values: Planck 2018 Plik best fit, no consistency relation, no stiff matter
             if len(kwargs) > 0:
                 for key in kwargs:
@@ -96,18 +98,13 @@ class LCDM_SN:
 
                 if Delta_N >= 0:
                     derived_dict['N_inf'] = derived_dict['N_re'] + Delta_N
-                    self.cosmo_param['f_end'] = np.exp(-derived_dict['N_inf']) * math.sqrt(derived_dict['A_t']/2)*M_Pl*1e9 / (2*hbar) 
-                    # Hz, frequency at the end of inflation
+                    self.cosmo_param['DN_re'] = Delta_N
                 else:
                     print('V_inf smaller than rho(T_re)! Adjust relevant input parameters: r, T_re, kappa10.')
             else:
                 print('r cannot be set to zero in a single-field, slow-roll inflation. Use positive r!')
         else:
-            if self.cosmo_param['f_end'] >= derived_dict['f_re']:
-                Delta_N = (np.log(self.cosmo_param['f_end']) - np.log(derived_dict['f_re'])) * 2
-                derived_dict['N_inf'] = derived_dict['N_re'] + Delta_N
-            else:
-                print('f_end smaller than f_re! Choose larger f_end or lower f_re.')
+            derived_dict['N_inf'] = derived_dict['N_re'] + self.cosmo_param['DN_re']
         
         return derived_dict   
 
@@ -194,8 +191,12 @@ class LCDM_SN:
         #####   Construct the vector of sampled frequencies to calculate tensor transfer functions,
         #####   chosen empirically -- more points around transition!
 
-        f = np.arange(0, (self.derived_param['N_inf']-self.derived_param['N_re'])/5) * (-2)       # before the peak, during reheating
-        f = cat((f, f[-1]-np.arange(1,53)*.2), axis=None)                       # around the peak
+        if self.derived_param['N_inf']>self.derived_param['N_re']:
+            f = np.arange(0, (self.derived_param['N_inf']-self.derived_param['N_re'])/5) * (-2)     # before the peak, during reheating
+            f = cat((f, f[-1]-np.arange(1,53)*.2), axis=None)                                       # around the peak
+        else:
+            f = -np.arange(1,50)*.2                                                                 # after the peak, instantaneous reheating
+            
         if (self.cosmo_param['kappa10']>0):
             f = cat((f, -np.arange(1, self.derived_param['N_re']-math.log(Otreh2/Osh2)/2+4)+f[-1]), axis=None)     # after the peak, before T_sr
             f = cat((f, -np.arange(1,15)*.5+f[-1]), axis=None)                  # around T_sr (the ankle), through BBN

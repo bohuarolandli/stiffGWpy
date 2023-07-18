@@ -35,7 +35,7 @@ params:
     prior:
       dist: uniform
       min: -18
-      max: -14
+      max: -13
     ref:
       dist: uniform
       min: -16.5

@@ -27,10 +27,10 @@ speed: 500
 # They typically do not appear in the Cobaya input: they are included automatically at run time.
 # However, one is still allowed to add them to the input to redefine any of their properties. 
 
-params:
-  N_eff: 
-    derived: True
-    latex: N_\mathrm{eff}
+#params:
+#  N_eff: 
+#    derived: True
+#    latex: N_\mathrm{eff}
 #  my_foreground_amp:
 #    prior:
 #      dist: uniform

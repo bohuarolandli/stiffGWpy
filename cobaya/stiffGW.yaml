@@ -22,10 +22,9 @@ speed: 0.1
 ### Derived parameters are also specified here.
 
 params:
-#  Delta_Neff_GW:
-#    derived: True
-#    latex: \Delta N_{eff,GW}
-#  kappa_stiff: 
-#    value: .05
-#    derived: True
-#    latex: (\rho_s/\rho_\gamma)(T=1~\mathrm{MeV})
+  Delta_Neff_GW: 
+    derived: True
+    latex: \Delta N_\mathrm{eff,GW}
+  f_end:
+    derived: True
+    latex: f_\mathrm{end}

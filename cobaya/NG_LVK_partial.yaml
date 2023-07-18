@@ -1,0 +1,120 @@
+theory:
+  stiffGW:
+    python_path: .
+#    provides:
+#    - f
+#    - omGW_stiff
+
+likelihood:
+  NANOGrav:
+    python_path: ./likelihoods/PTA
+#  LVK_SGWB_CC:
+#    python_path: ./likelihoods/LIGO_SGWB
+
+params:
+  Omega_bh2:
+    value: 0.0223828
+    latex: \Omega_\mathrm{b} h^2
+  Omega_ch2:
+    value: 0.1201075
+    latex: \Omega_\mathrm{c} h^2
+  H0:
+    value: 67.32117
+    latex: H_0
+  h:
+    derived: 'lambda H0: H0/100'
+    latex: h
+  DN_eff:
+    value: 0
+    latex: \Delta N_\mathrm{eff}
+  A_s:
+    value: 2.100549e-9
+    latex: A_\mathrm{s}
+  log10r:
+    prior:
+      min: -40
+      max: 0
+    ref:
+      dist: uniform
+      loc: -4
+      scale: 4
+    proposal: 1
+    latex: \log_{10}r
+  r:
+    value: 'lambda log10r: np.power(10.,log10r)'
+    latex: r
+  n_t:
+    prior:
+      min: -1
+      max: 6
+    ref:
+      dist: uniform
+      loc: 0
+      scale: 1
+    proposal: 0.1
+    latex: n_\mathrm{t}
+  cr:
+    value: 0
+  log10T_re:
+    prior:
+      min: -3.0
+      max: 7.0
+    ref:
+      dist: uniform
+      loc: -1.0
+      scale: 3.0
+    proposal: 0.1
+    latex: \log_{10}(T_\mathrm{re}/\mathrm{GeV})
+    drop: True
+  T_re:
+    value: 'lambda log10T_re: np.power(10.,log10T_re)'
+    latex: T_\mathrm{re}
+  DN_re:
+    prior:
+      min: 0
+      max: 40
+    ref:
+      dist: uniform
+      loc: 0
+      scale: 20
+    proposal: 1
+    latex: \Delta N_\mathrm{re}
+  kappa10:
+    prior:
+      min: 0
+      max: 500
+    ref:
+      dist: uniform
+      loc: 0
+      scale: 50
+    proposal: 1
+    latex: \kappa_{10}
+#  gamma_BBH:
+#    value: 'lambda A_BBH: 13./3'
+#    latex: \gamma_\mathrm{BH}
+
+#prior:
+#  Jacobian: 'lambda logA, Delta_logT, logT_sr: logA + Delta_logT + 2*logT_sr'
+
+
+sampler:
+  mcmc:
+#    drag: True
+#    oversample_power: 0.4
+    max_tries: 50d
+    proposal_scale: 1.9
+    covmat: auto
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    output_every: 600s
+    learn_every: 20d
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 15.0
+    learn_proposal_Rminus1_max_early: 30.0
+    learn_proposal_Rminus1_min: 0.0
+
+#debug: logs/NG_part_gamma.debug
+
+force: True
+#resume: True
+output: chains/NG_part_gamma

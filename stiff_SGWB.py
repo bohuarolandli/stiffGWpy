@@ -5,7 +5,7 @@ import os, yaml, math
 import numpy as np
 from numpy import concatenate as cat
 from scipy import interpolate, integrate
-from pathlib import Path
+#from pathlib import Path
 
 from global_param import *
 from functions import int_FD, solve_SGWB
@@ -17,10 +17,12 @@ class LCDM_SG(LCDM_SN):
     Cosmological model: LCDM + stiff component + constant Delta N_eff
 
     The free/base parameters of the model are: 
-    'Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'n_t', 'f_end', 'cr', 'T_re', 'kappa10'.
-    [H0] = km s^-1 Mpc^-1, [T_re] = GeV, [f_end] = Hz.
-    Set cr > 0 if the consistency relation is assumed, otherwise set cr <= 0 and provide (n_t, f_end).
-    kappa10 := rho_stiff/rho_photon at 10 MeV
+    'Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'n_t', 'cr', 'T_re', 'DN_re', 'kappa10'.
+    - [H0] = km s^-1 Mpc^-1, [T_re] = GeV.
+    - Set cr > 0 if the consistency relation is assumed, otherwise set cr <= 0 and provide (n_t, DN_re).
+    - DN_re is the number of e-folds from the end of inflation to the end of reheating, 
+      assuming a^{-3} matter-like evolution.
+    - kappa10 := rho_stiff/rho_photon at 10 MeV.
 
     There are three ways to instantiate a model with desired base parameters: 
     1. input a yaml file,  2. input a dictionary, 

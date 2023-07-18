@@ -52,19 +52,24 @@ class NANOGrav(Likelihood):
         yr = u.yr.to(u.s)               # s, one Julian year
         T_base = 1/self.freqs[0]        # s, baseline of the PTA data
         work_freqs = self.freqs[:14]    # work frequencies in Hz, i=1-14 for NG15
+        # Caveat: limiting frequency bins may lead to the survival of some stiff-amplified models 
+        # which would otherwise be ruled out by high-frequency data (i=15-30)
         
         # Primordial SGWB
-        cond = (f_theory >= -11) & (f_theory <= -5) 
+        cond = (f_theory > -13) & (f_theory < -6) 
         f_t = f_theory[cond]; Ogw_t = Ogw_theory[cond]
-        
         spec_prim = interpolate.CubicSpline(f_t, Ogw_t)
-        Ogw_prim = spec_prim(np.log10(work_freqs))        
-        rho_prim = np.divide(10**Ogw_prim * H_0**2, 8*np.pi**4 * work_freqs**5 * T_base)         # s^2
+
+        rho_prim = np.zeros_like(work_freqs)
+        cond = (np.log10(work_freqs)<=f_t[-1])
+        # Calculate theoretical Omega_GW ONLY for PTA frequency bins in its range, i.e., <= f_end
+        Ogw_prim = spec_prim(np.log10(work_freqs[cond]))        
+        rho_prim[cond] = np.divide(np.power(10., Ogw_prim) * H_0**2, 8*np.pi**4 * work_freqs[cond]**5 * T_base)     # s^2
 
         # SGWB from SMBHBs
         log10hc_BH = data_params['A_BBH']      # log10(h_c) at f_yr
         gamma_BH = data_params['gamma_BBH']
-        rho_BH = 10**(log10hc_BH*2) * (work_freqs*yr)**(-gamma_BH) * yr**3 / (12*np.pi**2 * T_base)  # s^2
+        rho_BH = np.power(10., log10hc_BH*2) * np.power(work_freqs*yr, -gamma_BH) * yr**3 / (12*np.pi**2 * T_base)  # s^2
 
         
         log10rho_Model = np.log10(np.sqrt(rho_prim + rho_BH))    # log10(delay/s) = log10(sqrt(rho/s^2))
