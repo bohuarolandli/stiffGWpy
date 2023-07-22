@@ -95,15 +95,12 @@ spline_N_g = interpolate.CubicSpline(N_sm, g[1:], bc_type="natural")
 f_yr = 1/yr     # Hz, reference frequency used for PTA
 f_LIGO = 25     # Hz, reference frequency used by LIGO-Virgo
 
-#A_NG12 = log10(1.92e-15); A_NG12_upper = log10(2.67e-15); A_NG12_lower = log10(1.37e-15); alpha_NG12 = -2/3; 
 
-alpha_NG12 = -.5            # Spectral index for stiff-amplified SGWB
-A_NG12_upper = -14.417 
-A_NG12_lower = -14.756 
-f_NG12 = np.array((-2, 0, 1))                                  # log10(f/f_yr)
-hc_NG12 = A_NG12_lower + alpha_NG12*f_NG12                     # 95% lower limit of log10(h_c) from NANOGrav 12.5yr data
+#####       AlterBBN      #########
 
-Ogw_LIGO3 = 6.6e-9     #  95% upper limit of Omega_GW from LIGO-Virgo O3, marginalized over spectral index
+T_i = np.log10(27. * 8.617330637338339e-5)   # Initial temperature at 27e9 K
+N_i = spl_T_N_fp(T_i)
+z_fp_i = spl_T_z_fp(T_i)
 
 
 #####     BBN observational data, obsolete    #####

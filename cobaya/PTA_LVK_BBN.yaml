@@ -4,12 +4,20 @@ theory:
 #    provides:
 #    - f
 #    - omGW_stiff
+  alterbbn:
+    python_path: .
 
 likelihood:
   NANOGrav:
     python_path: ./likelihoods/PTA
-#  LVK_SGWB_CC:
-#    python_path: ./likelihoods/LIGO_SGWB
+  LVK_SGWB_CC:
+    python_path: ./likelihoods/LIGO_SGWB
+  Helium:      # PDG2022
+    external: 'lambda _self=True: -.5 * (_self.provider.get_result("Y_p") - .245)**2/(0.00012**2 + .003**2)'
+    requires: Y_p
+  Deuterium:   # PDG2022
+    external: 'lambda _self=True: -.5 * (_self.provider.get_result("D_to_H") - 2.547e-5)**2/(0.033e-5**2 + .025e-5**2)'
+    requires: D_to_H
 
 params:
   Omega_bh2:
@@ -37,8 +45,8 @@ params:
     ref:
       dist: uniform
       loc: -4
-      scale: 4
-    proposal: 1
+      scale: 2
+    proposal: 0.1
     latex: \log_{10}r
   r:
     value: 'lambda log10r: np.power(10.,log10r)'
@@ -49,9 +57,10 @@ params:
       max: 6
     ref:
       dist: uniform
-      loc: 0
-      scale: 1
-    proposal: 0.1
+      loc: -0.1
+      scale: 0.2
+    proposal: 0.01
+#    value: 0
     latex: n_\mathrm{t}
   cr:
     value: 0
@@ -63,7 +72,7 @@ params:
       dist: uniform
       loc: -1.0
       scale: 3.0
-    proposal: 0.1
+    proposal: 0.01
     latex: \log_{10}(T_\mathrm{re}/\mathrm{GeV})
     drop: True
   T_re:
@@ -76,8 +85,9 @@ params:
     ref:
       dist: uniform
       loc: 0
-      scale: 20
-    proposal: 1
+      scale: 10
+    proposal: 0.1
+#    value: 0
     latex: \Delta N_\mathrm{re}
   kappa10:
     prior:
@@ -86,8 +96,8 @@ params:
     ref:
       dist: uniform
       loc: 0
-      scale: 50
-    proposal: 1
+      scale: 10
+    proposal: .5
     latex: \kappa_{10}
 #  gamma_BBH:
 #    value: 'lambda A_BBH: 13./3'
@@ -101,8 +111,10 @@ sampler:
   mcmc:
 #    drag: True
 #    oversample_power: 0.4
+#    max_samples: 10
+#    max_tries: .inf
     max_tries: 50d
-    proposal_scale: 1.9
+    proposal_scale: 1.0
     covmat: auto
     Rminus1_stop: 0.01
     Rminus1_cl_stop: 0.2
@@ -113,8 +125,8 @@ sampler:
     learn_proposal_Rminus1_max_early: 30.0
     learn_proposal_Rminus1_min: 0.0
 
-#debug: logs/NG_part_gamma.debug
-
+debug: logs/NG_LVK_BBN.debug
+#debug: True
 force: True
 #resume: True
-output: chains/NG_part_gamma
+output: chains/NG_LVK_BBN

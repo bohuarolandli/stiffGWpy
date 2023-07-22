@@ -24,7 +24,7 @@ class LVK_SGWB_CC(Likelihood):
         """
         return dictionary specifying quantities that are always needed and calculated by a theory code
         """
-        return {'f': None, 'omGW_stiff': None, 'Delta_Neff_GW': None,}
+        return {'f': None, 'omGW_stiff': None,}
 
     
     def logp(self, _derived=None, **params_values):

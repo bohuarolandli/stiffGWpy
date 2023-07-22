@@ -67,6 +67,8 @@ class LCDM_SN:
 
             'A_t': self.cosmo_param['r'] * self.cosmo_param['A_s'],
             'nt': input_nt(self.cosmo_param),
+
+            'kappa_s': self.cosmo_param['kappa10'] * (z_fp_10/z_fp_i)**4 * np.exp(2*(N_i-N_10))          # kappa_stiff(T_i) for AlterBBN
         }
 
         log10_Tre = np.log10(self.cosmo_param['T_re'])

@@ -40,7 +40,7 @@ params:
       dist: uniform
       min: -16.5
       max: -14.5
-    proposal: 0.05
+    proposal: 0.01
     latex: \log_{10}\,h_{c,\mathrm{BH}}
   # gamma from the unresolved SGWB from SMBH binary inspirals, 13/3 in the canonical case
   gamma_BBH:
@@ -52,7 +52,7 @@ params:
       dist: uniform
       min: 4
       max: 5
-    proposal: 0.05
+    proposal: 0.01
     latex: \gamma_\mathrm{BH}
 prior:
   # from Afzal et al. 2023

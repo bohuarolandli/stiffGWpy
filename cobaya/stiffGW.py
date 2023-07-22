@@ -2,6 +2,8 @@ from cobaya.theory import Theory
 from cobaya.tools import load_module
 from cobaya.log import LoggedError, get_logger
 import numpy as np
+import astropy.units as u
+from scipy import interpolate
 import sys, os
 from mpi4py import MPI
 #from pathlib import Path
@@ -44,10 +46,10 @@ class stiffGW(Theory):
 #            return {'B': {'kmax': requirements['A'].get('kmax', 10)}}
         
     def get_can_provide(self):
-        return ['f', 'omGW_stiff', 'hubble',]
+        return ['f', 'omGW_stiff', 'hubble', 'kappa_s', 'kappa_r',]
 
     def get_can_provide_params(self):
-        return ['Delta_Neff_GW', 'f_end',]
+        return ['Delta_Neff_GW', 'Delta_Neff', 'log10hc_prim_fyr', 'f_end',]
 
     
     def calculate(self, state, want_derived=True, **params_values_dict):
@@ -73,15 +75,27 @@ class stiffGW(Theory):
             state['f'] = self.stiffGW_model.f                                              # Output frequency in log10(f/Hz)
             state['omGW_stiff'] = np.log10(self.stiffGW_model.Ogw_today - self.stiffGW_model.Oj_today)  # log10(Omega_GW(f))
             # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
-            state['hubble'] = self.stiffGW_model.derived_param['H_0']         # H_0 in units of s^-1    
+            state['hubble'] = self.stiffGW_model.derived_param['H_0']            # H_0 in units of s^-1
+            state['kappa_s'] = self.stiffGW_model.derived_param['kappa_s']       # kappa_stiff(T_i) for AlterBBN
+            state['kappa_r'] = self.stiffGW_model.kappa_r                        # kappa_rad(T_i) for AlterBBN, related to Delta_Neff
             
             if want_derived:
-                state['derived'] = {'Delta_Neff_GW': self.stiffGW_model.DN_gw[-1],    # Delta N_eff due to the primordial SGWB today
-                                    'f_end': np.power(10., self.stiffGW_model.f[0])   # Hz, UV cutoff frequency
+                yr = u.yr.to(u.s); log10f_yr = -np.log10(yr)
+                if self.stiffGW_model.f[0] >= log10f_yr:
+                    f_t = np.flip(state['f']); Ogw_t = np.flip(state['omGW_stiff'])
+                    spec_prim = interpolate.CubicSpline(f_t[f_t>-12], Ogw_t[f_t>-12])
+                    omGW_stiff_fyr = spec_prim(log10f_yr)    # log10(Omega_GW(f_yr))
+                else:    
+                    omGW_stiff_fyr = -100.
+                
+                state['derived'] = {'Delta_Neff_GW': self.stiffGW_model.DN_gw[-1],           # Delta N_eff due to the primordial SGWB today
+                                    'Delta_Neff': self.stiffGW_model.cosmo_param['DN_eff'],  # Total Delta N_eff after GW calculation
+                                    'log10hc_prim_fyr': omGW_stiff_fyr/2 + np.log10(np.sqrt(1.5)*state['hubble']/np.pi)-log10f_yr,
+                                    # log10(h_c(f_yr)) of the primordial SGWB
+                                    'f_end': np.power(10., self.stiffGW_model.f[0]),              # Hz, UV cutoff frequency
                                    }
         else:
-            self.log.debug("SGWB calculation not converged, mostly due to too much stiff amplification. "
-                           "Assigning 0 likelihood and going on.")
+            self.log.debug("SGWB calculation not converged, mostly due to too much stiff amplification. Assigning 0 likelihood and going on.")
             return False
 
         

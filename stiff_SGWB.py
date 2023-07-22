@@ -165,8 +165,14 @@ class LCDM_SG(LCDM_SN):
             self.DN_gw = Neff0 * np.multiply(self.g2, np.exp(2*(self.f_hor-self.f_hor[-1])*math.log(10)+2*(self.Nv-self.Nv[-1]))) / Omega_nu
             # Obtain the entire evolution of the DN_eff due to SGWB. It is actually rho_GW(N) / (rho_{gamma,0}*7/8*(4/11)**(4/3)).
             # Now self.DN_gw[-1] + self.DN_eff_orig = self.cosmo_param['DN_eff'].
-
+            
             self.get_today()
+
+            ###  Extra radiation (e.g., SGWB) parameterized as kappa_rad(T_i) for AlterBBN
+            
+            self.kappa_r = self.cosmo_param['DN_eff']* 7/8*(4/11)**(4/3) * (z_fp[-1]/z_fp_i)**4
+            # Using the final asymptotic value of Delta N_eff, since for all reasonable T_re (>~ 1 MeV), 
+            # Delta N_eff,GW has already (or almost) reached its asymptotic value by T_i=27e9 K for AlterBBN.
             
 
 
