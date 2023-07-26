@@ -83,7 +83,7 @@ class stiffGW(Theory):
                 yr = u.yr.to(u.s); log10f_yr = -np.log10(yr)
                 if self.stiffGW_model.f[0] >= log10f_yr:
                     f_t = np.flip(state['f']); Ogw_t = np.flip(state['omGW_stiff'])
-                    spec_prim = interpolate.CubicSpline(f_t[f_t>-12], Ogw_t[f_t>-12])
+                    spec_prim = interpolate.CubicSpline(f_t[f_t>-13], Ogw_t[f_t>-13])
                     omGW_stiff_fyr = spec_prim(log10f_yr)    # log10(Omega_GW(f_yr))
                 else:    
                     omGW_stiff_fyr = -100.

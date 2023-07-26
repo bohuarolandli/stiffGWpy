@@ -15,6 +15,7 @@ path: null
 kde_file: likelihoods/PTA/NANOGrav15yr/density.npy
 log10rhogrid_file: likelihoods/PTA/NANOGrav15yr/log10rhogrid.npy
 freq_file: likelihoods/PTA/NANOGrav15yr/freqs.npy
+Nfreqs: 14
 # Aliases for automatic covariance matrix
 aliases: [NANOGrav15yr]
 # Speed in evaluations/second (after theory inputs calculated).
@@ -35,7 +36,7 @@ params:
     prior:
       dist: uniform
       min: -18
-      max: -13
+      max: -11
     ref:
       dist: uniform
       min: -16.5

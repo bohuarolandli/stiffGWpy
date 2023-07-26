@@ -51,12 +51,14 @@ class NANOGrav(Likelihood):
         """
         yr = u.yr.to(u.s)               # s, one Julian year
         T_base = 1/self.freqs[0]        # s, baseline of the PTA data
-        work_freqs = self.freqs[:14]    # work frequencies in Hz, i=1-14 for NG15
+        
+        Nf = self.Nfreqs                # Number of work frequencies, i = 1 - Nf
+        work_freqs = self.freqs[:Nf]    # work frequencies in Hz
         # Caveat: limiting frequency bins may lead to the survival of some stiff-amplified models 
-        # which would otherwise be ruled out by high-frequency data (i=15-30)
+        # which would otherwise be ruled out by high-frequency data (i=Nf+1 - Ntot)
         
         # Primordial SGWB
-        cond = (f_theory > -13) & (f_theory < -6) 
+        cond = (f_theory > -13) & (f_theory < -5) 
         f_t = f_theory[cond]; Ogw_t = Ogw_theory[cond]
         spec_prim = interpolate.CubicSpline(f_t, Ogw_t)
 
@@ -76,7 +78,7 @@ class NANOGrav(Likelihood):
         #print(log10rho_Model)       
         
         logL = 0
-        for i in range(len(work_freqs)):
+        for i in range(Nf):
             KDE_i = interpolate.CubicSpline(self.log10rhogrid, self.data[0,i])
             logL += KDE_i(np.max([log10rho_Model[i], self.log10rhogrid[0]]))
             # If rho_Model(f_i) is smaller than the lower limit of the given KDE range, ~ -15,

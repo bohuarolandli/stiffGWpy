@@ -168,6 +168,7 @@ class LCDM_SG(LCDM_SN):
             
             self.get_today()
 
+            
             ###  Extra radiation (e.g., SGWB) parameterized as kappa_rad(T_i) for AlterBBN
             
             self.kappa_r = self.cosmo_param['DN_eff']* 7/8*(4/11)**(4/3) * (z_fp[-1]/z_fp_i)**4
