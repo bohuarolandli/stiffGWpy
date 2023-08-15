@@ -31,8 +31,15 @@ using its 'SGWB_iter' method.
 
 ### Input ###
 
-The free/base parameters of both types of models are: 'Omega_bh2', 'Omega_ch2', 'H0', 'DN_eff', 'A_s', 'r', 'T_re', 'T_sr',  
-where [H0] = km s^-1 Mpc^-1, [T_re] = GeV, [T_sr] = GeV.
+The free/base parameters of both types of models are: 
+
+'Omega_bh2',  'Omega_ch2',  'H0',  'DN_eff',  'A_s',  'r', 'n_t', 'cr', 'T_re', 'DN_re', 'kappa10'.
+
+    - [H0] = km s^-1 Mpc^-1, [T_re] = GeV.
+    - Set cr > 0 if the consistency relation is assumed, otherwise set cr <= 0 and provide (n_t, DN_re).
+    - DN_re is the number of e-folds from the end of inflation to the end of reheating, 
+      assuming a^{-3} matter-like evolution.
+    - kappa10 := rho_stiff/rho_photon at 10 MeV.
 
 There are three ways to initialize a model with desired base parameters:  
 <pre>
@@ -49,8 +56,9 @@ An example run is as follows.
 from stiff_SGWB import LCDM_SG as sg
 
 model = sg(r = 1e-2,
+           cr = 1,
            T_re = 2e3,
-           T_sr = 1e-2,
+           kappa10 = 1e-2,
           )
 
 model.cosmo_param['H0'] = 68
@@ -63,8 +71,10 @@ model.SGWB_iter()
 Output attributes after successfully running SGWB_iter():
     
 - f:             sampled frequencies of the SGWB today, log10(f/Hz) 
-- Ogw_today:     present-day energy spectrum of the primordial SGWB
-- stiff_to_photon_MeV: ratio of the stiff component energy density to that of photons at T = 1 MeV, to be passed to AlterBBN
+- log10OmegaGW:  present-day energy spectrum of the primordial SGWB, log10(Omega_GW(f))
+- f_grid:        Uniformly-spaced frequency grid for training emulator
+- log10OmegaGW_grid:  log10(Omega_GW(f)) at the uniform-spaced frequencies
+- kappa_r:       Total extra radiation (e.g., SGWB) parameterized as kappa_rad(T_i) to be passed to AlterBBN
 - DN_eff_orig:   original value of &Delta;N_eff from the input when the run is successful, otherwise set to None.
 <br/>
 
