@@ -8,10 +8,10 @@ theory:
     python_path: .
 
 likelihood:
-  NANOGrav:
-    python_path: ./likelihoods/PTA
-#  IPTA:
+#  NANOGrav:
 #    python_path: ./likelihoods/PTA
+  IPTA:
+    python_path: ./likelihoods/PTA
   LVK_SGWB_CC:
     python_path: ./likelihoods/LIGO_SGWB
   Helium:      # theoretical uncertainty from AlterBBN, observational uncertainty from PDG2022
@@ -54,18 +54,18 @@ params:
     value: 'lambda log10r: np.power(10.,log10r)'
     latex: r
   n_t:
-#    prior:
-#      min: -1
-#      max: 6
-#    ref:
-#      dist: uniform
-#      loc: -0.1
-#      scale: 0.2
-#    proposal: 0.01
-    value: 0
+    prior:
+      min: -1
+      max: 6
+    ref:
+      dist: uniform
+      loc: -0.1
+      scale: 0.2
+    proposal: 0.01
+#    value: 0
     latex: n_\mathrm{t}
   cr:
-    value: 1
+    value: 0
   log10T_re:
     prior:
       min: -3.0
@@ -81,29 +81,32 @@ params:
     value: 'lambda log10T_re: np.power(10.,log10T_re)'
     latex: T_\mathrm{re}
   DN_re:
-#    prior:
-#      min: 0
-#      max: 40
-#    ref:
-#      dist: uniform
-#      loc: 0
-#      scale: 10
-#    proposal: 0.1
-    value: 0
-    latex: \Delta N_\mathrm{re}
-  kappa10:
     prior:
       min: 0
-      max: 500
+      max: 40
     ref:
       dist: uniform
       loc: 0
       scale: 10
-    proposal: .5
+    proposal: 0.1
+#    value: 0
+    latex: \Delta N_\mathrm{re}
+  log10kappa10:
+    prior:
+      min: -27
+      max: 3
+    ref:
+      dist: uniform
+      loc: -1
+      scale: 2
+    proposal: .1
+    latex: \log_{10}\kappa_{10}
+  kappa10:
+    value: 'lambda log10kappa10: np.power(10.,log10kappa10)'
     latex: \kappa_{10}
-  gamma_BBH:
-    value: 'lambda A_BBH: 13./3'
-    latex: \gamma_\mathrm{BH}
+#  gamma_BBH:
+#    value: 'lambda A_BBH: 13./3'
+#    latex: \gamma_\mathrm{BH}
 
 #prior:
 #  Jacobian: 'lambda logA, Delta_logT, logT_sr: logA + Delta_logT + 2*logT_sr'
@@ -118,8 +121,9 @@ sampler:
     max_tries: 50d
     proposal_scale: 2.4
 #    covmat: auto
-    Rminus1_stop: 0.01
-    Rminus1_cl_stop: 0.2
+#    covmat: chains/EPTA_LVK_BBN.covmat
+    Rminus1_stop: 0.005
+    Rminus1_cl_stop: 0.1
     output_every: 600s
     learn_every: 20d
     learn_proposal: True
@@ -127,8 +131,8 @@ sampler:
     learn_proposal_Rminus1_max_early: 30.0
     learn_proposal_Rminus1_min: 0.0
 
-debug: logs/NG_LVK_BBN_cr_fixgamma.debug
+#debug: logs/EPTA_LVK_BBN.debug
 #debug: True
-force: True
-#resume: True
-output: chains/NG_LVK_BBN_cr_fixgamma
+#force: True
+resume: True
+output: chains/EPTA_LVK_BBN

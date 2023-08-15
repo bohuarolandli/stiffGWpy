@@ -17,6 +17,7 @@ class alterbbn(Theory):
         """called from __init__ to initialize"""
         self.model_uid = str(uuid.uuid1())      
         alterbbn_path = os.path.dirname(__file__) + '/../../../alterbbn_v2.2/'
+#        alterbbn_path = '/work/bohuali/alterbbn_v2.2/'
         alter_stiff = load_module('alter_stiff', path=alterbbn_path)
         self.BBNstiff_model = alter_stiff.BBN_stiff(self.model_uid)    
         #self.comm = MPI.COMM_WORLD

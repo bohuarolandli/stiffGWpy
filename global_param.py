@@ -50,57 +50,30 @@ nu_today = m_nu*1e-3 / (kB*Tnu)
 Omega_mnuh2 = Omega_nh2/3 * rho_nu0       # the massive neutrino eigenstate
 
 
-######      Thermal history      ######
+######      Thermal history from 20 keV ~ 10^6 GeV     ######
 
-# I. Neutrino decoupling regime, 20 keV ~- 10 MeV. From fortepiano
+thdata = np.loadtxt(os.path.dirname(__file__) + '/th.dat')
+T_th = thdata[:,0]; T_max = T_th[-1]
+N_th = thdata[:,2]; N_max = N_th[-1]; N_fin = N_th[0]
+rho_th = thdata[:,5]; rhop_th = thdata[:,6]
 
-fpdata = np.loadtxt(os.path.dirname(__file__) + '/benchmark_th.dat')
-T_fp = fpdata[:,2]            # GeV
-z_fp = fpdata[:,1]; N_fp = fpdata[:,4]; N_fin_fp = N_fp[-1]
-rho_fp = fpdata[:,5]; p_fp = fpdata[:,6]
+spl_rho = interpolate.CubicSpline(N_th, rho_th)
+spl_rhop = interpolate.CubicSpline(N_th, rhop_th)
 
-spl_T_z_fp = interpolate.CubicSpline(np.log10(np.flip(T_fp)), np.flip(z_fp)); z_fp_10 = spl_T_z_fp(-2)
-spl_T_rho_fp = interpolate.CubicSpline(np.log10(np.flip(T_fp)), np.flip(rho_fp))
+spl_T_N = interpolate.CubicSpline(np.log10(T_th), N_th)
+N_10 = spl_T_N(-2); a_10 = np.exp(-N_10)
 
-spl_T_N_fp = interpolate.CubicSpline(np.log10(np.flip(T_fp)), np.flip(N_fp))
-N_10 = spl_T_N_fp(-2); a_10 = np.exp(-N_10)
-coeff_fp = Omega_ph2 / (np.pi**2/15 * z_fp[-1]**4)
+#####       AlterBBN      #########
 
-spl_N_rho_fp = interpolate.CubicSpline(np.flip(N_fp), np.flip(rho_fp))
-spl_N_p_fp = interpolate.CubicSpline(np.flip(N_fp), np.flip(p_fp))
-
-# II. Pre-neutrino-decoupling, 10 MeV ~- 10^6 GeV, SM in thermal equilibrium. From Saikawa & Shirai 2020
-
-g_sm = np.loadtxt(os.path.dirname(__file__) + '/eos2020.dat')
-T_sm = g_sm[:,0]              # GeV
-gs = g_sm[:,1]; g = g_sm[:,2]
-
-spl = interpolate.CubicSpline(np.log10(T_sm[1:]), g[1:])
-spl_s = interpolate.CubicSpline(np.log10(T_sm[1:]), gs[1:]); gs_10 = spl_s(-2)
-
-# Lookback number of e-folds, N = -ln(a), assuming entropy conservation
-N_sm = np.log(T_sm[1:]/TCMB_GeV) + np.log(gs[1:]/gs[0])/3
-N_max = N_sm[-1]; T_max = T_sm[-1]
-
-g_max = g[-1]; gs_fin = gs[1]; gs_max = gs[-1]
-Omega_oreh2 = Omega_ph2 * g_max/2 * (gs_fin/gs_max)**(4/3)    # SM radiation before any SM phase transition
-
-z3 = gs[0]*np.reciprocal(gs[1:])               # z^3 := (a*T_photon/T_photon,0)^3 = g_*s,0/g_*s
-spline_N_z3 = interpolate.CubicSpline(N_sm, z3, bc_type="natural")
-spline_N_g = interpolate.CubicSpline(N_sm, g[1:], bc_type="natural")
+T_i = 27. * 8.617330637338339e-5   # Initial temperature at 27e9 K
+N_i = spl_T_N(math.log10(T_i))
+z_ratio = TCMB_GeV/T_i*np.exp(N_i)  # T_CMB/(T_i*a_i)
 
 
 #####    Gravitational-wave data    #####
 
 f_yr = 1/yr     # Hz, reference frequency used for PTA
 f_LIGO = 25     # Hz, reference frequency used by LIGO-Virgo
-
-
-#####       AlterBBN      #########
-
-T_i = np.log10(27. * 8.617330637338339e-5)   # Initial temperature at 27e9 K
-N_i = spl_T_N_fp(T_i)
-z_fp_i = spl_T_z_fp(T_i)
 
 
 #####     BBN observational data, obsolete    #####

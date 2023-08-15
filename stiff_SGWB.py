@@ -146,14 +146,15 @@ class LCDM_SG(LCDM_SN):
                 DN_gw_new = Neff0 * self.g2[-1] / Omega_nu
                    
                 #print(DN_gw_new, self.DN_gw)
-                if (self.DN_eff_orig + DN_gw_new > 5):
-                    print('Total N_eff too large! Shorten the stiff era or lower the blue tilt n_t.')
+                if (self.DN_eff_orig + DN_gw_new > 5):     
+                    #print('Total N_eff too large! Shorten the stiff era or lower the blue tilt n_t.')
                     self.cosmo_param['DN_eff'] = self.DN_eff_orig
                     self.DN_eff_orig = None
                     return
                 else:
                     self.cosmo_param['DN_eff'] = self.DN_eff_orig + DN_gw_new
-                    if (self.DN_gw !=0 and abs(DN_gw_new/self.DN_gw - 1) <= 1e-4):
+                    if abs((Neff0+self.cosmo_param['DN_eff'])/(Neff0+self.DN_eff_orig+self.DN_gw) - 1.) < 1e-4:
+                    #if (self.DN_gw !=0 and abs(DN_gw_new/self.DN_gw - 1) <= 1e-4):
                         break
                 
                 self.DN_gw = DN_gw_new
@@ -167,11 +168,18 @@ class LCDM_SG(LCDM_SN):
             # Now self.DN_gw[-1] + self.DN_eff_orig = self.cosmo_param['DN_eff'].
             
             self.get_today()
+            self.log10OmegaGW = np.log10(self.Ogw_today - self.Oj_today)  # log10(Omega_GW(f))
+            # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
+            Ogw_spl = interpolate.CubicSpline(np.flip(self.f), np.flip(self.log10OmegaGW))
 
+            self.f_grid = np.arange(-18.5,12.5,.25)
+            self.log10OmegaGW_grid = -40*np.ones_like(self.f_grid)
+            self.log10OmegaGW_grid[self.f_grid<=self.f[0]] = Ogw_spl(self.f_grid[self.f_grid<=self.f[0]])
+                
             
             ###  Extra radiation (e.g., SGWB) parameterized as kappa_rad(T_i) for AlterBBN
             
-            self.kappa_r = self.cosmo_param['DN_eff']* 7/8*(4/11)**(4/3) * (z_fp[-1]/z_fp_i)**4
+            self.kappa_r = self.cosmo_param['DN_eff']* 7/8*(4/11)**(4/3) * z_ratio**4
             # Using the final asymptotic value of Delta N_eff, since for all reasonable T_re (>~ 1 MeV), 
             # Delta N_eff,GW has already (or almost) reached its asymptotic value by T_i=27e9 K for AlterBBN.
             

@@ -68,34 +68,26 @@ class LCDM_SN:
             'A_t': self.cosmo_param['r'] * self.cosmo_param['A_s'],
             'nt': input_nt(self.cosmo_param),
 
-            'kappa_s': self.cosmo_param['kappa10'] * (z_fp_10/z_fp_i)**4 * np.exp(2*(N_i-N_10))          # kappa_stiff(T_i) for AlterBBN
+            'kappa_s': self.cosmo_param['kappa10'] * (1e-2/T_i)**4 * np.exp(6*(N_i-N_10))                # kappa_stiff(T_i) for AlterBBN
         }
 
-        log10_Tre = np.log10(self.cosmo_param['T_re'])
         if self.cosmo_param['T_re'] >= T_max:
-            derived_dict['N_re'] = -np.log(TCMB_GeV/self.cosmo_param['T_re']) - np.log(gs_fin/gs_max)/3
-            derived_dict['g_re'] = g_max
-            derived_dict['g_stiff_re'] = 2*self.cosmo_param['kappa10'] * (self.cosmo_param['T_re']*1e2)**2 * (gs_max/gs_10)**2
-            # effective g_* of the stiff matter at T_re
-        elif self.cosmo_param['T_re'] > 1e-2:
-            derived_dict['N_re'] = -np.log(TCMB_GeV/self.cosmo_param['T_re']) - np.log(gs_fin/spl_s(log10_Tre))/3
-            derived_dict['g_re'] = spl(log10_Tre)
-            derived_dict['g_stiff_re'] = 2*self.cosmo_param['kappa10'] * (self.cosmo_param['T_re']*1e2)**2 * (spl_s(log10_Tre)/gs_10)**2
+            derived_dict['N_re'] = N_max + math.log(self.cosmo_param['T_re']/T_max)
+            derived_dict['rho_re'] = rho_th[-1]
         else:
-            derived_dict['N_re'] = spl_T_N_fp(log10_Tre)
-            derived_dict['g_re'] = spl_T_rho_fp(log10_Tre) / (np.pi**2/30 * spl_T_z_fp(log10_Tre)**4)
-            derived_dict['g_stiff_re'] = 2*self.cosmo_param['kappa10'] * (self.cosmo_param['T_re']*1e2)**2 * (z_fp_10/spl_T_z_fp(log10_Tre))**6
-        derived_dict['f_re'] = np.exp(-derived_dict['N_re']) * math.sqrt((derived_dict['g_re']+derived_dict['g_stiff_re'])/30) \
-            * self.cosmo_param['T_re']**2/(math.sqrt(3)*M_Pl) *1e9 / (2*hbar)     # Hz, frequency at the end of reheating
+            derived_dict['N_re'] = spl_T_N(math.log10(self.cosmo_param['T_re']))
+            derived_dict['rho_re'] = spl_rho(derived_dict['N_re'])
+        derived_dict['f_re'] = np.exp(derived_dict['N_re']) * math.sqrt(TCMB_GeV**4*derived_dict['rho_re'] \
+            + self.cosmo_param['kappa10']*1e-8*np.exp(2*derived_dict['N_re']-6*N_10))*1e9 / (6*math.sqrt(5)*M_Pl*hbar)   # Hz, frequency at the end of reheating
 
         derived_dict['N_inf'] = None
         if self.cosmo_param['cr'] > 0:
             if self.cosmo_param['r'] > 0:
-                derived_dict['V_inf'] = (1.5*derived_dict['A_t'])**.25 * np.pi**.5 * M_Pl
+                derived_dict['V_inf'] = (1.5*derived_dict['A_t'])**.25 * math.pi**.5 * M_Pl
                 # ( GeV)^4, energy scale of single field, slow-roll inflaion
                 
-                Delta_N = np.log(M_Pl)*4/3 - np.log(self.cosmo_param['T_re'])*4/3 \
-                    + np.log(45*derived_dict['A_t'] / (derived_dict['g_re']+derived_dict['g_stiff_re']))/3   
+                Delta_N = math.log(M_Pl)*4/3 - derived_dict['N_re']*4/3 + math.log(45/2*derived_dict['A_t'] \
+                        / (TCMB_GeV**4*derived_dict['rho_re'] + self.cosmo_param['kappa10']*1e-8*np.exp(2*derived_dict['N_re']-6*N_10)))/3   
                 # Lookback number of e-folds from the end of inflation to the end of reheating, a^{-3} matter-like evolution
 
                 if Delta_N >= 0:
@@ -133,7 +125,7 @@ class LCDM_SN:
         
         Oerh2 = Omega_ph2 * 7/8 * (4/11)**(4/3) * self.cosmo_param['DN_eff']         # Omega_{extra rad}*h^2
         Otrh2 = Omega_orh2 + Oerh2                                                   # total radiation after e+e- annihilation
-        Otreh2 = Omega_oreh2 + Oerh2                                                 # total radiation before any SM phase transition
+        Otreh2 = Omega_ph2 * rho_th[-1] + Oerh2                                      # total radiation before any SM phase transition
         
         OLh2 = self.derived_param['h']**2 - Omh2 - Omega_mnuh2 - Omega_nh2*2/3 - Omega_ph2 - Oerh2 - Osh2     # Omega_Lambda*h^2
 
@@ -159,20 +151,14 @@ class LCDM_SN:
                 [rho_nu, p_nu] = int_FD(nu)
                 H2 = Omh2 + (Omega_ph2+(2/3+rho_nu/3)*Omega_nh2+Oerh2)*eN + Osh2*e3N + OLh2/e3N
                 Sv[i] = (Omh2 + 4/3*(Omega_ph2+2/3*Omega_nh2+Oerh2)*eN + (rho_nu+p_nu)*Omega_nh2/3*eN + 2*Osh2*e3N)/H2
-            elif (nu < 0.1) and (Nv[i] > Nv[-1]-N_fin_fp):     # massive neutrinos become highly relativistic
+            elif (nu < 0.1) and (Nv[i] > Nv[-1]-N_fin):     # massive neutrinos become highly relativistic
                 H2 = Omh2 + Otrh2*eN + Osh2*e3N + OLh2/e3N  
                 Sv[i] = (Omh2 + 4/3*Otrh2*eN + 2*Osh2*e3N)/H2
-            elif (Nv[i] <= Nv[-1]-N_fin_fp) and (Nv[i] >= Nv[-1]-N_10):   # Neutrino decoupling regime, 20 keV ~- 10 MeV. From fortepiano
-                rho_fp_i = spl_N_rho_fp(Nv[-1]-Nv[i])
-                p_fp_i = spl_N_p_fp(Nv[-1]-Nv[i])
-                H2 = Omh2 + (coeff_fp*rho_fp_i + Oerh2)*eN + Osh2*e3N + OLh2/e3N
-                Sv[i] = (Omh2 + (coeff_fp*(rho_fp_i+p_fp_i) + 4/3*Oerh2)*eN + 2*Osh2*e3N)/H2
-            elif (Nv[i] < Nv[-1]-N_10) and (Nv[i] >= Nv[-1]-N_max):  
-                # Pre-neutrino-decoupling, 10 MeV ~- 10^6 GeV, SM in thermal equilibrium. From Saikawa & Shirai 2020
-                z3_i = spline_N_z3(Nv[-1]-Nv[i])
-                g_i = spline_N_g(Nv[-1]-Nv[i])
-                H2 = Omh2 + (Omega_ph2 * g_i/2 * z3_i**(4/3) + Oerh2)*eN + Osh2*e3N + OLh2/e3N
-                Sv[i] = (Omh2 + 4/3*(Omega_ph2 * gs_fin/2 * z3_i**(1/3) + Oerh2)*eN + 2*Osh2*e3N)/H2
+            elif (Nv[i] <= Nv[-1]-N_fin) and (Nv[i] >= Nv[-1]-N_max):   # Use lookup table for thermal history, 20 keV ~- 10^6 GeV. 
+                rho_i = spl_rho(Nv[-1]-Nv[i])
+                rhop_i = spl_rhop(Nv[-1]-Nv[i])
+                H2 = Omh2 + (Omega_ph2*rho_i + Oerh2)*eN + Osh2*e3N + OLh2/e3N
+                Sv[i] = (Omh2 + (Omega_ph2*rhop_i + 4/3*Oerh2)*eN + 2*Osh2*e3N)/H2
             else:
                 H2 = Omh2 + Otreh2*eN + Osh2*e3N + OLh2/e3N
                 Sv[i] = (Omh2 + 4/3*Otreh2*eN + 2*Osh2*e3N)/H2

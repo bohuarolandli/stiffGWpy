@@ -72,16 +72,21 @@ class NANOGrav(Likelihood):
         log10hc_BH = data_params['A_BBH']      # log10(h_c) at f_yr
         gamma_BH = data_params['gamma_BBH']
         rho_BH = np.power(10., log10hc_BH*2) * np.power(work_freqs*yr, -gamma_BH) * yr**3 / (12*np.pi**2 * T_base)  # s^2
-
         
         log10rho_Model = np.log10(np.sqrt(rho_prim + rho_BH))    # log10(delay/s) = log10(sqrt(rho/s^2))
         #print(log10rho_Model)       
+
+
+        log10rhogrid_max = np.max(self.log10rhogrid); log10rhogrid_min = np.min(self.log10rhogrid)
         
         logL = 0
         for i in range(Nf):
             KDE_i = interpolate.CubicSpline(self.log10rhogrid, self.data[0,i])
-            logL += KDE_i(np.max([log10rho_Model[i], self.log10rhogrid[0]]))
-            # If rho_Model(f_i) is smaller than the lower limit of the given KDE range, ~ -15,
-            # use the lower limit to calculate the logpdf instead.
+            if log10rho_Model[i]>log10rhogrid_max:
+                logL += KDE_i(log10rhogrid_max)
+            elif log10rho_Model[i]<log10rhogrid_min:
+                logL += KDE_i(log10rhogrid_min)
+            else:
+                logL += KDE_i(log10rho_Model[i])
 
         return logL
