@@ -2,10 +2,10 @@
 # which calculate the cosmological model of LCDM + stiff + primordial SGWB
 
 import os, yaml, math
+import multiprocessing as mp
 import numpy as np
 from numpy import concatenate as cat
 from scipy import interpolate, integrate
-#from pathlib import Path
 
 from global_param import *
 from functions import int_FD, solve_SGWB
@@ -53,65 +53,68 @@ class LCDM_SG(LCDM_SN):
         
     #@property
 
-        
-        
-    def run_SGWB(self):
+
+    def run_SGWB_single(self, freq):
         """
         Integrate the equation of motion of primordial tensor fluctuations 
-        for selected frequencies and given expansion history
+        for a single frequency and given expansion history
+        """
+
+        P_t = self.derived_param['A_t'] * np.power((10**freq)/f_piv, self.derived_param['nt'])
+        # Primordial tensor power spectrum
+
+        j = 0
+        while ((freq+3) < self.f_hor[j]) and (j<len(self.Nv)):  # solver begins at k/aH < 10^{-3}
+            j = j+1
+        if (j >= 1): j = j-1   
+    
+        z0 = (freq-self.f_hor[j])*math.log(10)         # convert to ln(2*pi*f*c/aH)
+        result = solve_SGWB(self.Nv, self.sigma, j, z0)
+                
+        N_this = self.Nv[(self.Nv >= result.sol.t_min) & (self.Nv <= result.sol.t_max)]
+        [zf_this, xf_this, yf_this] = result.sol(N_this)
+        Th_this = np.divide(yf_this, np.exp(zf_this))
+        Oj_this = np.multiply(xf_this, Th_this)/3 * P_t
+        Ogw_this = (np.power(xf_this,2) + np.power(yf_this,2))/24 * P_t + Oj_this
+        Opgw_this = (-5*np.power(xf_this,2) + 7*np.power(yf_this,2))/72 * P_t
+                
+        # high-frequency, post-horizon-reentry regime
+        if (N_this[-1]<self.Nv[-1]):
+            N_hf = self.Nv[self.Nv > N_this[-1]]
+            f_hf = self.f_hor[self.Nv > N_this[-1]]
+            
+            coeff = math.sqrt(0.5*(xf_this[-1]**2+yf_this[-1]**2))
+            Th_hf = coeff * np.exp(-zf_this[-1] + N_this[-1] - N_hf)      # the rms T_h, time-averaged
+            xf_hf = np.multiply(Th_hf, np.power(10, freq-f_hf))           # the rms x_f, time-averaged
+            Oj_hf = -np.power(Th_hf,2)/3 * P_t
+            Opgw_hf = np.power(xf_hf,2)/36 * P_t
+            Ogw_hf = Opgw_hf * 3 + Oj_hf
+                    
+            N_this = cat((N_this, N_hf), axis=None)
+            Th_this = cat((Th_this, Th_hf), axis=None)
+            Oj_this = cat((Oj_this, Oj_hf), axis=None)
+            Ogw_this = cat((Ogw_this, Ogw_hf), axis=None)
+            Opgw_this = cat((Opgw_this, Opgw_hf), axis=None)
+                    
+        return [N_this, Th_this, Oj_this, Ogw_this, Opgw_this]
+
+    
+    def run_SGWB(self):
+        """
+        Solve for selected frequencies and given expansion history
+        using multiprocessing parallelism
         """
         
-        P_t = self.derived_param['A_t'] * (10**self.f/f_piv)**self.derived_param['nt']    # Primordial tensor power spectrum
+        with mp.Pool(processes=None) as pool:
+            res_it = pool.imap(self.run_SGWB_single, self.f, chunksize=3)
+            res = [y for y in res_it]
 
-        n_f = len(self.f); n_v = len(self.Nv)
-        # Each element in the list is a frequency channel
-        N_hc = []    # integration begins when the horizon crossing starts to occur
-        Th = []      # Tensor transfer function
-        Ogw = []     # dOmega_GW / dlnf
-        Opgw = []    # dOmega_pGW / dlnf
-        Oj = []      # \dot T_h * T_h / 3H * P_t
-    
-        for i in range(n_f):
-
-            j = 0
-            while ((self.f[i]+3) < self.f_hor[j]) and (j<n_v):  # solver begins at k/aH < 10^{-3}
-                j = j+1
-            if (j >= 1): j = j-1   
-
-            z0 = (self.f[i]-self.f_hor[j])*math.log(10)         # convert to ln(2*pi*f*c/aH)
-            result = solve_SGWB(self.Nv, self.sigma, j, z0)
-            
-            N_this = self.Nv[(self.Nv >= result.sol.t_min) & (self.Nv <= result.sol.t_max)]
-            [zf_this, xf_this, yf_this] = result.sol(N_this)
-            Th_this = np.divide(yf_this, np.exp(zf_this))
-            Oj_this = np.multiply(xf_this, Th_this)/3 * P_t[i]
-            Ogw_this = (np.power(xf_this,2) + np.power(yf_this,2))/24 * P_t[i] + Oj_this
-            Opgw_this = (-5*np.power(xf_this,2) + 7*np.power(yf_this,2))/72 * P_t[i]
-            
-            # high-frequency, post-horizon-reentry regime
-            if (N_this[-1]<self.Nv[-1]):
-                N_hf = self.Nv[self.Nv > N_this[-1]]
-                f_hf = self.f_hor[self.Nv > N_this[-1]]
-        
-                coeff = math.sqrt(0.5*(xf_this[-1]**2+yf_this[-1]**2))
-                Th_hf = coeff * np.exp(-zf_this[-1] + N_this[-1] - N_hf)      # the rms T_h, time-averaged
-                xf_hf = np.multiply(Th_hf, np.power(10, self.f[i]-f_hf))      # the rms x_f, time-averaged
-                Oj_hf = -np.power(Th_hf,2)/3 * P_t[i]
-                Opgw_hf = np.power(xf_hf,2)/36 * P_t[i]
-                Ogw_hf = Opgw_hf * 3 + Oj_hf
-                
-                N_this = cat((N_this, N_hf), axis=None)
-                Th_this = cat((Th_this, Th_hf), axis=None)
-                Oj_this = cat((Oj_this, Oj_hf), axis=None)
-                Ogw_this = cat((Ogw_this, Ogw_hf), axis=None)
-                Opgw_this = cat((Opgw_this, Opgw_hf), axis=None)
-                
-            N_hc.append(N_this); Th.append(Th_this)
-            Ogw.append(Ogw_this); Opgw.append(Opgw_this); Oj.append(Oj_this)
-        
-        self.N_hc = N_hc; self.Th = Th
-        self.Ogw = Ogw; self.Opgw = Opgw; self.Oj = Oj
-
+        # Each element in the following lists is for a frequency channel
+        self.N_hc = [single_sol[0] for single_sol in res]  # Number of e-folds, starting at the horizon crossing for each frequency
+        self.Th = [single_sol[1] for single_sol in res]    # Tensor transfer function
+        self.Oj = [single_sol[2] for single_sol in res]    # \dot T_h * T_h / 3H * P_t
+        self.Ogw = [single_sol[3] for single_sol in res]   # dOmega_GW / dlnf
+        self.Opgw = [single_sol[4] for single_sol in res]  # dOmega_pGW / dlnf
         
              
     def SGWB_iter(self):
@@ -131,13 +134,14 @@ class LCDM_SG(LCDM_SN):
             return
 
         # Main calculation starts here!
-        if (self.SGWB_converge == False):           
+        if self.SGWB_converge == False:
             Omega_nu = Omega_nh2/self.derived_param['h']**2
         
             self.DN_eff_orig = self.cosmo_param['DN_eff']
             # Record the original input value of DN_eff before entering the iterations
             
             self.DN_gw = 0; DN_gw_new = 0
+            DN_gw_min = 0; DN_gw_max = 10
             while True:    # main iteration
                 self.gen_expansion()
                 self.run_SGWB()
@@ -145,21 +149,32 @@ class LCDM_SG(LCDM_SN):
 
                 DN_gw_new = Neff0 * self.g2[-1] / Omega_nu
                    
-                #print(DN_gw_new, self.DN_gw)
-                if (self.DN_eff_orig + DN_gw_new > 5):     
+                #print(DN_gw_new, self.DN_gw, DN_gw_min, DN_gw_max)
+                if self.DN_eff_orig + DN_gw_new > 5:     
                     #print('Total N_eff too large! Shorten the stiff era or lower the blue tilt n_t.')
                     self.cosmo_param['DN_eff'] = self.DN_eff_orig
                     self.DN_eff_orig = None
                     return
-                else:
-                    self.cosmo_param['DN_eff'] = self.DN_eff_orig + DN_gw_new
-                    if abs((Neff0+self.cosmo_param['DN_eff'])/(Neff0+self.DN_eff_orig+self.DN_gw) - 1.) < 1e-4:
-                    #if (self.DN_gw !=0 and abs(DN_gw_new/self.DN_gw - 1) <= 1e-4):
-                        break
-                
-                self.DN_gw = DN_gw_new
-                
 
+                # Break when the required convergence precision is met!
+                if abs((Neff0+self.DN_eff_orig+DN_gw_new)/(Neff0+self.DN_eff_orig+self.DN_gw) - 1) < 1e-4:
+                    self.cosmo_param['DN_eff'] = self.DN_eff_orig + DN_gw_new
+                    break
+
+                # Use bisection method to find the next point to shoot
+                if DN_gw_new > self.DN_gw > DN_gw_min and DN_gw_max >= self.DN_gw:
+                    DN_gw_min = self.DN_gw
+                elif DN_gw_new < self.DN_gw < DN_gw_max and DN_gw_min <= self.DN_gw:
+                    DN_gw_max = self.DN_gw
+
+                if 0 < DN_gw_min <= DN_gw_max < 10:
+                    DN_gw_new = (DN_gw_min + DN_gw_max)/2
+                        
+                self.cosmo_param['DN_eff'] = self.DN_eff_orig + DN_gw_new
+                self.DN_gw = DN_gw_new
+            # End of main iteration
+
+            
             #print(DN_gw_new, self.DN_gw, self.cosmo_param['DN_eff']) 
             self.SGWB_converge = True           
             self.hubble = math.log10(2*math.pi) + self.f_hor + math.log10(math.exp(1)) * (self.Nv[-1]-self.Nv)    # log10(H/s^-1), H = 2pi * f_hor / a 
@@ -167,13 +182,15 @@ class LCDM_SG(LCDM_SN):
             # Obtain the entire evolution of the DN_eff due to SGWB. It is actually rho_GW(N) / (rho_{gamma,0}*7/8*(4/11)**(4/3)).
             # Now self.DN_gw[-1] + self.DN_eff_orig = self.cosmo_param['DN_eff'].
             
-            self.get_today()
+            self.Ogw_today = np.array([self.Ogw[i][-1] for i in range(len(self.f))])
+            self.Opgw_today = np.array([self.Opgw[i][-1] for i in range(len(self.f))])
+            self.Oj_today = np.array([self.Oj[i][-1] for i in range(len(self.f))])
             self.log10OmegaGW = np.log10(self.Ogw_today - self.Oj_today)  # log10(Omega_GW(f))
             # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
             Ogw_spl = interpolate.CubicSpline(np.flip(self.f), np.flip(self.log10OmegaGW))
 
             self.f_grid = np.arange(-18.5,12.5,.25)
-            self.log10OmegaGW_grid = -40*np.ones_like(self.f_grid)
+            self.log10OmegaGW_grid = -40 * np.ones_like(self.f_grid)
             self.log10OmegaGW_grid[self.f_grid<=self.f[0]] = Ogw_spl(self.f_grid[self.f_grid<=self.f[0]])
                 
             
@@ -182,19 +199,8 @@ class LCDM_SG(LCDM_SN):
             self.kappa_r = self.cosmo_param['DN_eff']* 7/8*(4/11)**(4/3) * z_ratio**4
             # Using the final asymptotic value of Delta N_eff, since for all reasonable T_re (>~ 1 MeV), 
             # Delta N_eff,GW has already (or almost) reached its asymptotic value by T_i=27e9 K for AlterBBN.
-            
 
-
-    def get_today(self):
-        """
-        Obtain the present-day SGWB energy spectrum
-        """
-        self.Ogw_today=np.empty(0); self.Opgw_today=np.empty(0); self.Oj_today=np.empty(0)
-        for i in range(len(self.f)): 
-            self.Ogw_today = np.append(self.Ogw_today, self.Ogw[i][-1])
-            self.Opgw_today = np.append(self.Opgw_today, self.Opgw[i][-1])
-            self.Oj_today = np.append(self.Oj_today, self.Oj[i][-1])
-                                
+    # End of SGWB_iter
             
         
     def int_SGWB(self):

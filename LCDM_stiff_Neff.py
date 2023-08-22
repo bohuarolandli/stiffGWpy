@@ -2,6 +2,7 @@
 # which calculate the cosmological model of LCDM + stiff + constant N_eff
 
 import os, yaml, math
+#import multiprocessing as mp
 import numpy as np
 from numpy import concatenate as cat
 #from scipy import interpolate
@@ -68,7 +69,7 @@ class LCDM_SN:
             'A_t': self.cosmo_param['r'] * self.cosmo_param['A_s'],
             'nt': input_nt(self.cosmo_param),
 
-            'kappa_s': self.cosmo_param['kappa10'] * (1e-2/T_i)**4 * np.exp(6*(N_i-N_10))                # kappa_stiff(T_i) for AlterBBN
+            'kappa_s': self.cosmo_param['kappa10'] * (1e-2/T_i)**4 * math.exp(6*(N_i-N_10))              # kappa_stiff(T_i) for AlterBBN
         }
 
         if self.cosmo_param['T_re'] >= T_max:
@@ -77,8 +78,10 @@ class LCDM_SN:
         else:
             derived_dict['N_re'] = spl_T_N(math.log10(self.cosmo_param['T_re']))
             derived_dict['rho_re'] = spl_rho(derived_dict['N_re'])
-        derived_dict['f_re'] = np.exp(derived_dict['N_re']) * math.sqrt(TCMB_GeV**4*derived_dict['rho_re'] \
-            + self.cosmo_param['kappa10']*1e-8*np.exp(2*derived_dict['N_re']-6*N_10))*1e9 / (6*math.sqrt(5)*M_Pl*hbar)   # Hz, frequency at the end of reheating
+        self.rhorad_re = derived_dict['rho_re'] * (TCMB_GeV*math.exp(N_10))**4                            # rho_rad coefficient at T_re, in GeV^4
+        self.rhostiff_re = self.cosmo_param['kappa10'] * 1e-8 * math.exp(2*(derived_dict['N_re']-N_10))   # rho_stiff coefficient at T_re, in GeV^4
+        derived_dict['f_re'] = math.exp(derived_dict['N_re']-2*N_10)*1e9/(6*math.sqrt(5)*M_Pl*hbar) * math.sqrt(self.rhorad_re+self.rhostiff_re)  
+        # Hz, frequency at the end of reheating
 
         derived_dict['N_inf'] = None
         if self.cosmo_param['cr'] > 0:
@@ -86,8 +89,7 @@ class LCDM_SN:
                 derived_dict['V_inf'] = (1.5*derived_dict['A_t'])**.25 * math.pi**.5 * M_Pl
                 # ( GeV)^4, energy scale of single field, slow-roll inflaion
                 
-                Delta_N = math.log(M_Pl)*4/3 - derived_dict['N_re']*4/3 + math.log(45/2*derived_dict['A_t'] \
-                        / (TCMB_GeV**4*derived_dict['rho_re'] + self.cosmo_param['kappa10']*1e-8*np.exp(2*derived_dict['N_re']-6*N_10)))/3   
+                Delta_N = (N_10-derived_dict['N_re'])*4/3 + math.log(M_Pl)*4/3 + math.log(45/2*derived_dict['A_t']/(self.rhorad_re+self.rhostiff_re))/3   
                 # Lookback number of e-folds from the end of inflation to the end of reheating, a^{-3} matter-like evolution
 
                 if Delta_N >= 0:
@@ -103,7 +105,7 @@ class LCDM_SN:
         return derived_dict   
 
     
-    
+
     
     def gen_expansion(self):
         """
@@ -179,21 +181,32 @@ class LCDM_SN:
         #####   Construct the vector of sampled frequencies to calculate tensor transfer functions,
         #####   chosen empirically -- more points around transition!
 
-        if self.derived_param['N_inf']>self.derived_param['N_re']:
-            f = np.arange(0, (self.derived_param['N_inf']-self.derived_param['N_re'])/5) * (-2)     # before the peak, during reheating
-            f = cat((f, f[-1]-np.arange(1,53)*.2), axis=None)                                       # around the peak
+        if self.derived_param['N_inf'] > self.derived_param['N_re']:
+            Delta_N = self.derived_param['N_inf']-self.derived_param['N_re']
+            f = -np.arange(0,2.5,.1)                                                # right after inflation
+            f = cat((f, -np.arange(2.5, Delta_N/2-7, 2)), axis=None)                # before T_re, during reheating; exp(Delta N /2) = f_end/f_re
+            f = cat((f, f[-1]-np.arange(1,10)*.5), axis=None)  
+            f = cat((f, f[-1]-np.arange(1,10*(f[-1]+Delta_N/2)+1)*.1), axis=None)   # approaching f_re, plus side
         else:
-            f = -np.arange(1,50)*.2                                                                 # after the peak, instantaneous reheating
-            
-        if (self.cosmo_param['kappa10']>0):
-            f = cat((f, -np.arange(1, self.derived_param['N_re']-math.log(Otreh2/Osh2)/2+4)+f[-1]), axis=None)     # after the peak, before T_sr
-            f = cat((f, -np.arange(1,15)*.5+f[-1]), axis=None)                  # around T_sr (the ankle), through BBN
+            f = np.zeros(1)                                                         # instantaneous reheating
+
+        if self.rhostiff_re > self.rhorad_re:
+            f = cat((f, f[-1]-np.arange(1,15)*.1), axis=None)                       # right after T_re, SD
+            f = cat((f, f[-1]-np.arange(1,15)*.3), axis=None) 
+            f = cat((f, f[-1]-np.arange(1, self.derived_param['N_re']-math.log(Otreh2/Osh2)/2+4, 2)), \
+                    axis=None)                                                      # after T_re, before T_sr
+            f = cat((f, f[-1]-np.arange(1,15)*.5), axis=None)                       # around T_sr (the ankle)
+        else:
+            f = cat((f, f[-1]-np.arange(1,10)*.1), axis=None)                       # right after T_re, RD
+            f = cat((f, f[-1]-np.arange(1,10)*.2), axis=None)
         
-        f = cat((f, f[-1]-2*np.arange(1,(f[-1]-fmin-10.0)/2)), axis=None)
-        f = cat((f, np.arange(1,11)*(-.5)+f[-1]), axis=None); f = cat((f, np.arange(1,16)*(-.2)+f[-1]), axis=None)
+        f = cat((f, f[-1]-np.arange(1, f[-1]-fmin-8, 2)), axis=None)                # RD, before z_eq
+        f = cat((f, np.arange(1,5)*(-.5)+f[-1]), axis=None); f = cat((f, np.arange(1,16)*(-.2)+f[-1]), axis=None)
         f = f + f_inf - f0 - Delta_f
         f = cat((f, np.arange(1,11)*(-.5)+f[-1]), axis=None); f = f[np.where(f>-26)]    # ~= Delta_f 
+
         
+        #####    Output the expansion history and frequencies    ######## 
         
         self.f = f * math.log10(math.exp(1)) + math.log10(f_yr)       # Convert output frequency in log10(f/Hz)
         self.Nv = Nv

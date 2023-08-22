@@ -1,6 +1,7 @@
 from cobaya.theory import Theory
 from cobaya.tools import load_module
 from cobaya.log import LoggedError, get_logger
+from multiprocessing import freeze_support
 import numpy as np
 import astropy.units as u
 from scipy import interpolate
@@ -61,15 +62,17 @@ class stiffGW(Theory):
         
         # Set parameters
         self.stiffGW_model.reset()
-        args = {p: v for p, v in params_values_dict.items()}
-        self.log.debug("Setting parameters: %r", args)
+        #args = {p: v for p, v in params_values_dict.items()}
+        #self.log.debug("Setting parameters: %r", args)
         #print(self.rank, ": ", params_values_dict)
         for key in self.stiffGW_model.cosmo_param:
             if key in params_values_dict:
                 self.stiffGW_model.cosmo_param[key] = params_values_dict[key]
         
         # Compute!
-        self.stiffGW_model.SGWB_iter()
+        sys.path.append(os.path.abspath('../'))
+        if __name__ == 'stiffGW':
+            self.stiffGW_model.SGWB_iter()
 
         
         if self.stiffGW_model.SGWB_converge:
@@ -95,7 +98,7 @@ class stiffGW(Theory):
                                     'f_end': np.power(10., self.stiffGW_model.f[0]),          # Hz, UV cutoff frequency
                                    }
         else:
-            self.log.debug("SGWB calculation not converged, mostly due to total N_eff too large. Assigning 0 likelihood and going on.")
+            #self.log.debug("SGWB calculation not converged, mostly due to total N_eff too large. Assigning 0 likelihood and going on.")
             return False
 
         

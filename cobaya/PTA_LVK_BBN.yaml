@@ -122,10 +122,10 @@ sampler:
     proposal_scale: 2.4
 #    covmat: auto
 #    covmat: chains/EPTA_LVK_BBN.covmat
-    Rminus1_stop: 0.005
-    Rminus1_cl_stop: 0.1
-    output_every: 600s
-    learn_every: 20d
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    output_every: 300s
+    learn_every: 40d
     learn_proposal: True
     learn_proposal_Rminus1_max: 15.0
     learn_proposal_Rminus1_max_early: 30.0
