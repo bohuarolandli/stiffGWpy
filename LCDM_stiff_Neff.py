@@ -178,32 +178,33 @@ class LCDM_SN:
         fv = fv - f0 - Delta_f
 
 
-        #####   Construct the vector of sampled frequencies to calculate tensor transfer functions,
+        #####   Construct the array of sampled frequencies to calculate tensor transfer functions,
         #####   chosen empirically -- more points around transition!
 
         if self.derived_param['N_inf'] > self.derived_param['N_re']:
             Delta_N = self.derived_param['N_inf']-self.derived_param['N_re']
-            f = -np.arange(0,2.5,.1)                                                # right after inflation
-            f = cat((f, -np.arange(2.5, Delta_N/2-7, 2)), axis=None)                # before T_re, during reheating; exp(Delta N /2) = f_end/f_re
-            f = cat((f, f[-1]-np.arange(1,10)*.5), axis=None)  
-            f = cat((f, f[-1]-np.arange(1,10*(f[-1]+Delta_N/2)+1)*.1), axis=None)   # approaching f_re, plus side
+            f = -np.arange(0, 2.5, .1)                                                # right after inflation
+            f = cat((f, -np.arange(2.5, Delta_N/2-8, 2)), axis=None)                  # before T_re, during reheating; exp(Delta N /2) = f_end/f_re
+            f = cat((f, f[-1]-np.arange(1,2*(f[-1]+Delta_N/2-1.5))*.5), axis=None);   # approaching f_re, plus side
+            f = cat((f, f[-1]-np.arange(1,10*(f[-1]+Delta_N/2)+1)*.1), axis=None)
         else:
-            f = np.zeros(1)                                                         # instantaneous reheating
+            f = np.zeros(1)                                                           # instantaneous reheating
 
         if self.rhostiff_re > self.rhorad_re:
-            f = cat((f, f[-1]-np.arange(1,15)*.1), axis=None)                       # right after T_re, SD
+            f = cat((f, f[-1]-np.arange(1,15)*.1), axis=None);                        # right after T_re, SD
             f = cat((f, f[-1]-np.arange(1,15)*.3), axis=None) 
             f = cat((f, f[-1]-np.arange(1, self.derived_param['N_re']-math.log(Otreh2/Osh2)/2+4, 2)), \
-                    axis=None)                                                      # after T_re, before T_sr
-            f = cat((f, f[-1]-np.arange(1,15)*.5), axis=None)                       # around T_sr (the ankle)
+                    axis=None)                                                        # after T_re, before T_sr
+            f = cat((f, f[-1]-np.arange(1,15)*.5), axis=None)                         # around T_sr (the ankle)
         else:
-            f = cat((f, f[-1]-np.arange(1,10)*.1), axis=None)                       # right after T_re, RD
-            f = cat((f, f[-1]-np.arange(1,10)*.2), axis=None)
+            f = cat((f, f[-1]-np.arange(1,15)*.1), axis=None);                        # right after T_re, RD
+            f = cat((f, f[-1]-np.arange(1,10)*.3), axis=None)
         
-        f = cat((f, f[-1]-np.arange(1, f[-1]-fmin-8, 2)), axis=None)                # RD, before z_eq
-        f = cat((f, np.arange(1,5)*(-.5)+f[-1]), axis=None); f = cat((f, np.arange(1,16)*(-.2)+f[-1]), axis=None)
-        f = f + f_inf - f0 - Delta_f
-        f = cat((f, np.arange(1,11)*(-.5)+f[-1]), axis=None); f = f[np.where(f>-26)]    # ~= Delta_f 
+        f = cat((f, f[-1]-np.arange(1, f[-1]-fmin-8, 2)), axis=None)                  # RD, before z_eq
+        f = cat((f, np.arange(1,8)*(-.5)+f[-1]), axis=None);                          # through z_eq
+        f = cat((f, np.arange(1,16)*(-.2)+f[-1]), axis=None)
+        f = f + f_inf - f0 - Delta_f                                                  # MD & Lambda-D, after z_eq
+        f = cat((f, np.arange(1,11)*(-.5)+f[-1]), axis=None); f = f[np.where(f>-26)]  # ~= Delta_f
 
         
         #####    Output the expansion history and frequencies    ######## 
