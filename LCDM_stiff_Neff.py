@@ -55,6 +55,8 @@ class LCDM_SN:
                 for key in kwargs:
                     if key in self.cosmo_param:
                         self.cosmo_param[key] = kwargs[key]
+
+        self.DN_eff_GW = 0          # Relativistic degree of freedom that exists before the end of reheating
                         
         
     @property  
@@ -78,9 +80,10 @@ class LCDM_SN:
         else:
             derived_dict['N_re'] = spl_T_N(math.log10(self.cosmo_param['T_re']))
             derived_dict['rho_re'] = spl_rho(derived_dict['N_re'])
-        self.rhorad_re = derived_dict['rho_re'] * (TCMB_GeV*math.exp(N_10))**4                            # rho_rad coefficient at T_re, in GeV^4
+        self.rhorad_re = (derived_dict['rho_re'] + 7/8*(4/11)**(4/3)*self.cosmo_param['DN_eff']) * (TCMB_GeV*math.exp(N_10))**4 
+        # rho_rad coefficient at T_re, including extra radiation, in GeV^4
         self.rhostiff_re = self.cosmo_param['kappa10'] * 1e-8 * math.exp(2*(derived_dict['N_re']-N_10))   # rho_stiff coefficient at T_re, in GeV^4
-        derived_dict['f_re'] = math.exp(derived_dict['N_re']-2*N_10)*1e9/(6*math.sqrt(5)*M_Pl*hbar) * math.sqrt(self.rhorad_re+self.rhostiff_re)  
+        #derived_dict['f_re'] = math.exp(derived_dict['N_re']-2*N_10)*1e9/(6*math.sqrt(5)*M_Pl*hbar) * math.sqrt(self.rhorad_re+self.rhostiff_re)  
         # Hz, frequency at the end of reheating
 
         derived_dict['N_inf'] = None
@@ -127,7 +130,7 @@ class LCDM_SN:
         
         Oerh2 = Omega_ph2 * 7/8 * (4/11)**(4/3) * self.cosmo_param['DN_eff']         # Omega_{extra rad}*h^2
         Otrh2 = Omega_orh2 + Oerh2                                                   # total radiation after e+e- annihilation
-        Otreh2 = Omega_ph2 * rho_th[-1] + Oerh2                                      # total radiation before any SM phase transition
+        Otreh2 = Omega_ph2 * rho_th[-1] + Oerh2                                 # total radiation before any SM phase transition
         
         OLh2 = self.derived_param['h']**2 - Omh2 - Omega_mnuh2 - Omega_nh2*2/3 - Omega_ph2 - Oerh2 - Osh2     # Omega_Lambda*h^2
 
@@ -171,49 +174,17 @@ class LCDM_SN:
         fv[0:index_re] = fv[index_re] - 0.5*(Nv[0:index_re] - Nv[index_re])
         # reheating is assumed to be MD since the end of inflation
 
-        # set fv = 0 for the reference frequency f_yr. 
-        # fv here is really \tilde f_H := ln (f_H/f_yr)
-        f0 = fv[-1]; f_inf = fv[0]; fmin = math.floor(fv.min()-f_inf)
-        Delta_f = math.log(2*math.pi*f_yr/self.derived_param['H_0'])
+        # Convert fv into physical units: here \tilde f_H = ln (f_H/Hz)
+        f0 = fv[-1]; Delta_f = math.log(2*math.pi/self.derived_param['H_0'])
         fv = fv - f0 - Delta_f
-
-
-        #####   Construct the array of sampled frequencies to calculate tensor transfer functions,
-        #####   chosen empirically -- more points around transition!
-
-        if self.derived_param['N_inf'] > self.derived_param['N_re']:
-            Delta_N = self.derived_param['N_inf']-self.derived_param['N_re']
-            f = -np.arange(0, 2.5, .1)                                                # right after inflation
-            f = cat((f, -np.arange(2.5, Delta_N/2-8, 2)), axis=None)                  # before T_re, during reheating; exp(Delta N /2) = f_end/f_re
-            f = cat((f, f[-1]-np.arange(1,2*(f[-1]+Delta_N/2-1.5))*.5), axis=None);   # approaching f_re, plus side
-            f = cat((f, f[-1]-np.arange(1,10*(f[-1]+Delta_N/2)+1)*.1), axis=None)
-        else:
-            f = np.zeros(1)                                                           # instantaneous reheating
-
-        if self.rhostiff_re > self.rhorad_re:
-            f = cat((f, f[-1]-np.arange(1,15)*.1), axis=None);                        # right after T_re, SD
-            f = cat((f, f[-1]-np.arange(1,15)*.3), axis=None) 
-            f = cat((f, f[-1]-np.arange(1, self.derived_param['N_re']-math.log(Otreh2/Osh2)/2+4, 2)), \
-                    axis=None)                                                        # after T_re, before T_sr
-            f = cat((f, f[-1]-np.arange(1,15)*.5), axis=None)                         # around T_sr (the ankle)
-        else:
-            f = cat((f, f[-1]-np.arange(1,15)*.1), axis=None);                        # right after T_re, RD
-            f = cat((f, f[-1]-np.arange(1,10)*.3), axis=None)
-        
-        f = cat((f, f[-1]-np.arange(1, f[-1]-fmin-8, 2)), axis=None)                  # RD, before z_eq
-        f = cat((f, np.arange(1,8)*(-.5)+f[-1]), axis=None);                          # through z_eq
-        f = cat((f, np.arange(1,16)*(-.2)+f[-1]), axis=None)
-        f = f + f_inf - f0 - Delta_f                                                  # MD & Lambda-D, after z_eq
-        f = cat((f, np.arange(1,11)*(-.5)+f[-1]), axis=None); f = f[np.where(f>-26)]  # ~= Delta_f
-
-        
+     
         #####    Output the expansion history and frequencies    ######## 
-        
-        self.f = f * math.log10(math.exp(1)) + math.log10(f_yr)       # Convert output frequency in log10(f/Hz)
+            
         self.Nv = Nv
         self.N = Nv - Nv[-1]
         self.sigma = Sv
-        self.f_hor = fv * math.log10(math.exp(1)) + math.log10(f_yr)
+        self.f_hor = fv / ln10       # log10(f_H/Hz)
+        self.f_re = self.f_hor[index_re]
 
 
 def input_nt(params):

@@ -60,15 +60,11 @@ class LCDM_SG(LCDM_SN):
         for a single frequency and given expansion history
         """
 
-        P_t = self.derived_param['A_t'] * np.power((10**freq)/f_piv, self.derived_param['nt'])
-        # Primordial tensor power spectrum
+        P_t = self.Tensor_power(freq)            # Primordial tensor power spectrum
 
-        j = 0
-        while ((freq+3) < self.f_hor[j]) and (j<len(self.Nv)):  # solver begins at k/aH < 10^{-3}
-            j = j+1
-        if (j >= 1): j = j-1   
-    
-        z0 = (freq-self.f_hor[j])*math.log(10)         # convert to ln(2*pi*f*c/aH)
+        j = self.find_index_hc(freq+3)           # solver begins at kc/aH <= 10^{-3}
+        z0 = (freq-self.f_hor[j]) * ln10         # convert to ln(kc/aH)
+        
         result = solve_SGWB(self.Nv, self.sigma, j, z0)
                 
         N_this = self.Nv[(self.Nv >= result.sol.t_min) & (self.Nv <= result.sol.t_max)]
@@ -97,7 +93,7 @@ class LCDM_SG(LCDM_SN):
             Opgw_this = cat((Opgw_this, Opgw_hf), axis=None)
                     
         return [N_this, Th_this, Oj_this, Ogw_this, Opgw_this]
-
+        
     
     def run_SGWB(self):
         """
@@ -105,7 +101,7 @@ class LCDM_SG(LCDM_SN):
         using multiprocessing parallelism
         """
         
-        with mp.Pool(processes=None) as pool:
+        with mp.Pool(processes=8) as pool:
             res_it = pool.imap(self.run_SGWB_single, self.f, chunksize=3)
             res = [y for y in res_it]
 
@@ -140,16 +136,17 @@ class LCDM_SG(LCDM_SN):
             self.DN_eff_orig = self.cosmo_param['DN_eff']
             # Record the original input value of DN_eff before entering the iterations
             
-            self.DN_gw = 0; DN_gw_new = 0
+            self.DN_gw = [0]; DN_gw_new = 0
             DN_gw_min = 0; DN_gw_max = 10
             while True:    # main iteration
                 self.gen_expansion()
+                self.construct_f()
                 self.run_SGWB()
                 self.int_SGWB()
 
                 DN_gw_new = Neff0 * self.g2[-1] / Omega_nu
                    
-                #print(DN_gw_new, self.DN_gw, DN_gw_min, DN_gw_max)
+                #print(DN_gw_new, self.DN_gw[-1], DN_gw_min, DN_gw_max, 7/8*(4/11)**(4/3)*self.cosmo_param['DN_eff']/self.derived_param['rho_re'])
                 if self.DN_eff_orig + DN_gw_new > 5:     
                     #print('Total N_eff too large! Shorten the stiff era or lower the blue tilt n_t.')
                     self.cosmo_param['DN_eff'] = self.DN_eff_orig
@@ -157,28 +154,28 @@ class LCDM_SG(LCDM_SN):
                     return
 
                 # Break when the required convergence precision is met!
-                if abs((Neff0+self.DN_eff_orig+DN_gw_new)/(Neff0+self.DN_eff_orig+self.DN_gw) - 1) < 1e-4:
+                if abs((Neff0+self.DN_eff_orig+DN_gw_new)/(Neff0+self.DN_eff_orig+self.DN_gw[-1]) - 1) < 1e-4:
                     self.cosmo_param['DN_eff'] = self.DN_eff_orig + DN_gw_new
                     break
 
                 # Use bisection method to find the next point to shoot
-                if DN_gw_new > self.DN_gw > DN_gw_min and DN_gw_max >= self.DN_gw:
-                    DN_gw_min = self.DN_gw
-                elif DN_gw_new < self.DN_gw < DN_gw_max and DN_gw_min <= self.DN_gw:
-                    DN_gw_max = self.DN_gw
+                if DN_gw_new > self.DN_gw[-1] > DN_gw_min and DN_gw_max >= self.DN_gw[-1]:
+                    DN_gw_min = self.DN_gw[-1]
+                elif DN_gw_new < self.DN_gw[-1] < DN_gw_max and DN_gw_min <= self.DN_gw[-1]:
+                    DN_gw_max = self.DN_gw[-1]
 
                 if 0 < DN_gw_min <= DN_gw_max < 10:
                     DN_gw_new = (DN_gw_min + DN_gw_max)/2
                         
                 self.cosmo_param['DN_eff'] = self.DN_eff_orig + DN_gw_new
-                self.DN_gw = DN_gw_new
+                self.DN_gw.append(DN_gw_new)
             # End of main iteration
 
             
             #print(DN_gw_new, self.DN_gw, self.cosmo_param['DN_eff']) 
             self.SGWB_converge = True           
-            self.hubble = math.log10(2*math.pi) + self.f_hor + math.log10(math.exp(1)) * (self.Nv[-1]-self.Nv)    # log10(H/s^-1), H = 2pi * f_hor / a 
-            self.DN_gw = Neff0 * np.multiply(self.g2, np.exp(2*(self.f_hor-self.f_hor[-1])*math.log(10)+2*(self.Nv-self.Nv[-1]))) / Omega_nu
+            self.hubble = math.log10(2*math.pi) + self.f_hor + (self.Nv[-1]-self.Nv)/ln10       # log10(H/s^-1), H = 2pi * f_hor / a 
+            self.DN_gw = Neff0 * np.multiply(self.g2, np.exp(2*(self.f_hor-self.f_hor[-1])*ln10+2*(self.Nv-self.Nv[-1]))) / Omega_nu
             # Obtain the entire evolution of the DN_eff due to SGWB. It is actually rho_GW(N) / (rho_{gamma,0}*7/8*(4/11)**(4/3)).
             # Now self.DN_gw[-1] + self.DN_eff_orig = self.cosmo_param['DN_eff'].
             
@@ -187,10 +184,11 @@ class LCDM_SG(LCDM_SN):
             self.Oj_today = np.array([self.Oj[i][-1] for i in range(len(self.f))])
             self.log10OmegaGW = np.log10(self.Ogw_today - self.Oj_today)  # log10(Omega_GW(f))
             # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
-            Ogw_spl = interpolate.CubicSpline(np.flip(self.f), np.flip(self.log10OmegaGW))
 
+            # Interpolate on uniform-spaced frequency bins and output
             self.f_grid = np.arange(-18.5,12.5,.25)
             self.log10OmegaGW_grid = -40 * np.ones_like(self.f_grid)
+            Ogw_spl = interpolate.CubicSpline(np.flip(self.f), np.flip(self.log10OmegaGW))
             self.log10OmegaGW_grid[self.f_grid<=self.f[0]] = Ogw_spl(self.f_grid[self.f_grid<=self.f[0]])
                 
             
@@ -201,8 +199,56 @@ class LCDM_SG(LCDM_SN):
             # Delta N_eff,GW has already (or almost) reached its asymptotic value by T_i=27e9 K for AlterBBN.
 
     # End of SGWB_iter
+    
+
+
+    def Tensor_power(self, freq):
+        return self.derived_param['A_t'] * np.power((10**freq)/f_piv, self.derived_param['nt'])
+
+    
+    def find_index_hc(self, freq):
+        """
+        Find the index in the number of e-folds array at which 
+        the horizon size is closest to freq, i.e., freq ~ aH/2pi
+        """
+        j = 0
+        while freq <= self.f_hor[j] and j<len(self.N)-1:
+            j = j+1
+        if (j >= 1): j = j-1 
             
+        return j
+
+
+    def construct_f(self):
+        """
+        Construct the array of sampled frequencies to calculate tensor transfer functions,
+        chosen empirically -- more points around transition!
+        """
+        fmax = self.f_hor[0]; fmin = min(self.f_hor); fcmb = math.log10(f_piv)
+        if self.derived_param['nt']>0:
+            fmax = min(fmax, (-math.log10(self.derived_param['A_t']))/self.derived_param['nt']+math.log10(f_piv))
+            
+        f = fmax+np.zeros(1); f = cat((f, f[-1]-np.logspace(-2,0.5, num=30)), axis=None)
         
+        if fmax >= self.f_re: 
+            f = f[f>=self.f_re]; f = f[f>=fmax-1]
+            f = cat((f, np.arange(f[-1]-.5, self.f_re+1, -.5)), axis=None)            # before T_re, during reheating
+            f = cat((f, np.arange(f[-1]-.1, self.f_re+.3, -.1)), axis=None)           # approaching f_re
+            f = cat((f, np.arange(f[-1]-.02, self.f_re-.2, -.02)), axis=None)         # through f_re
+            f = cat((f, np.arange(f[-1]-.05, self.f_re-1, -.05)), axis=None);         # away from f_re
+            f = cat((f, np.arange(f[-1]-.2, self.f_re-3, -.2)), axis=None)
+
+        if self.rhostiff_re > self.rhorad_re:
+            f = cat((f, np.arange(f[-1]-1, self.f_re-math.log10(self.rhostiff_re/self.rhorad_re)+1, -1)), axis=None)     # after T_re, before T_sr 
+            f = cat((f, np.arange(f[-1]-.2, self.f_re-math.log10(self.rhostiff_re/self.rhorad_re)-2, -.2)), axis=None)   # through T_sr (the ankle)    
+
+        f = f[f>=fcmb]
+        f = cat((f, np.arange(f[-1]-1, fcmb, -1)), axis=None)                         # RD, before z_eq
+        f = cat((f, np.arange(f[-1]-.2, fmin-1, -.2)), axis=None); f = f[f>=fmin]     # through z_eq to the present
+        
+        self.f = f
+
+    
     def int_SGWB(self):
         """
         Integrate the SGWB spectrum to obtain the bolometric energy fractions at each moment.
@@ -211,27 +257,32 @@ class LCDM_SG(LCDM_SN):
         self.g2 = np.zeros_like(self.Nv)      # total Omega_gw
         self.w2 = np.zeros_like(self.Nv)      # total Omega_pgw
         
-        # Patch SGWB output arrays into a matrix for integration
+        # Patch SGWB solutions into matrices for integration over f
         M_N_hc = -np.ones((len(self.f),len(self.Nv)))
-        M_Ogw=np.empty((0,len(self.Nv))); M_Opgw=np.empty((0,len(self.Nv))); M_Oj=np.empty((0,len(self.Nv)))
+        M_Ogw = np.zeros_like(M_N_hc); M_Opgw = np.zeros_like(M_N_hc); M_Oj = np.zeros_like(M_N_hc)
         for i in range(len(self.f)):
-            Ogw_evo = np.zeros((1,len(self.Nv))); Opgw_evo = np.zeros((1,len(self.Nv))); Oj_evo = np.zeros((1,len(self.Nv)))
-            
-            mask = np.isin(self.Nv,self.N_hc[i]); M_N_hc[i,mask]=self.N_hc[i]
-            np.place(Ogw_evo, mask, self.Ogw[i]); M_Ogw = cat((M_Ogw, Ogw_evo))
-            np.place(Opgw_evo, mask, self.Opgw[i]); M_Opgw = cat((M_Opgw, Opgw_evo))
-            np.place(Oj_evo, mask, self.Oj[i]); M_Oj = cat((M_Oj, Oj_evo))
+            #cond = self.N_hc[i]>=self.Nv[self.find_index_hc(self.f[i]-3)]
+            # Only count GW energy density when each mode is at least 3 decades inside the horizon
+            cond = self.N_hc[i]>=self.N_hc[i][0]
+            M_N_hc[i, (mask := np.isin(self.Nv, self.N_hc[i][cond]))] = self.N_hc[i][cond]
+            M_Ogw[i,mask] = self.Ogw[i][cond]; M_Opgw[i,mask] = self.Opgw[i][cond]; M_Oj[i,mask] = self.Oj[i][cond]
             
         M_N_hc = np.transpose(M_N_hc); M_Ogw = np.transpose(M_Ogw); M_Opgw = np.transpose(M_Opgw); M_Oj = np.transpose(M_Oj)
-        
+
+        # Do the integration!
         for i in range(len(self.Nv)):
-            ind_int = M_N_hc[i]>=0               # indices of frequencies/modes which start to enter or have entered the horizon
-            f_int = np.flip(self.f[ind_int])     # in units of log10(f/Hz)
+            #ind_int = (M_N_hc[i]>=0) & (self.f<=self.f[0]-3)    # indices of modes whose frequencies are at least 3 decades less than f_inf
+            ind_int = (M_N_hc[i]>=0) & (self.Tensor_power(self.f)<1)   # indices of modes whose superhorizon power is less than unity
+            f_int = np.flip(self.f[ind_int])                           # log10(f/Hz), increasing order
             Ogw_int = np.flip(M_Ogw[i,ind_int]); Opgw_int = np.flip(M_Opgw[i,ind_int]); Oj_int = np.flip(M_Oj[i,ind_int])
-            
-            # do not consider the negative super-horizon contribution from Omega_j, for the moment...    
-            self.g2[i] = integrate.simpson(Ogw_int-Oj_int, f_int) * math.log(10)
-            self.w2[i] = integrate.simpson(Opgw_int, f_int) * math.log(10)
+
+            if len(f_int)>=2:
+                # do not consider the negative super-horizon contribution from Omega_j, for the moment...    
+                self.g2[i] = integrate.simpson(Ogw_int-Oj_int, f_int) * ln10
+                #self.g2[i] = integrate.simpson(Ogw_int, f_int) * ln10
+                self.w2[i] = integrate.simpson(Opgw_int, f_int) * ln10
+            else:
+                self.g2[i] = 0; self.w2[i] = 0
             
             #fx = np.arange(f_int.min(), f_int.max(), .01)
             #spline_gw = interpolate.InterpolatedUnivariateSpline(f_int, Ogw_int-Oj_int)

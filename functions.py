@@ -44,7 +44,7 @@ def solve_SGWB(Nv, Sv, j0, z0):
                        dense_output=True,
                        events=[subhorizon,],
                        args=param,
-                       rtol=1e-5, atol=[1e-10, 1e-20, 1e-20], 
+                       rtol=1e-6, atol=[1e-10, 1e-20, 1e-20],
                        jac=jacobian,
                       )
 
@@ -56,9 +56,9 @@ def tensor(N, state, spline):
     """
     Dynamical system for tensor modes:
     
-    z = ln(2*pi*f*c/aH)
+    z = ln(2*pi*f/aH)
     x = \dot T_h / H
-    y = (2*pi*f*c/aH) * T_h
+    y = (2*pi*f/aH) * T_h
     sigma = -2 \dot H / 3H^2
 
     z' = 1.5*sigma - 1                

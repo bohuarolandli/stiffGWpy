@@ -1,7 +1,7 @@
 from cobaya.likelihood import Likelihood
 from cobaya.log import LoggedError, get_logger
 import numpy as np
-import os
+import os, math
 from scipy import interpolate
 import astropy.units as u
 #from scipy.stats import gaussian_kde as kde
@@ -58,20 +58,21 @@ class NANOGrav(Likelihood):
         # which would otherwise be ruled out by high-frequency data (i=Nf+1 - Ntot)
         
         # Primordial SGWB
-        cond = (f_theory > -13) & (f_theory < -5) 
-        f_t = f_theory[cond]; Ogw_t = Ogw_theory[cond]
-        spec_prim = interpolate.CubicSpline(f_t, Ogw_t)
-
         rho_prim = np.zeros_like(work_freqs)
-        cond = (np.log10(work_freqs)<=f_t[-1])
-        # Calculate theoretical Omega_GW ONLY for PTA frequency bins in its range, i.e., <= f_end
-        Ogw_prim = spec_prim(np.log10(work_freqs[cond]))        
-        rho_prim[cond] = np.divide(np.power(10., Ogw_prim) * H_0**2, 8*np.pi**4 * work_freqs[cond]**5 * T_base)     # s^2
+        if f_theory[-1] >= math.log10(work_freqs[0]):
+            cond = (f_theory > -13) & (f_theory < -5)
+            f_t = f_theory[cond]; Ogw_t = Ogw_theory[cond]
+            spec_prim = interpolate.CubicSpline(f_t, Ogw_t)
+
+            cond = (np.log10(work_freqs)<=f_t[-1])
+            # Calculate theoretical Omega_GW ONLY for PTA frequency bins in its range, i.e., <= f_end
+            Ogw_prim = spec_prim(np.log10(work_freqs[cond]))        
+            rho_prim[cond] = np.divide(np.power(10., Ogw_prim) * H_0**2, 8*np.pi**4 * work_freqs[cond]**5 * T_base)  # s^2
 
         # SGWB from SMBHBs
         log10hc_BH = data_params['A_BBH']      # log10(h_c) at f_yr
         gamma_BH = data_params['gamma_BBH']
-        rho_BH = np.power(10., log10hc_BH*2) * np.power(work_freqs*yr, -gamma_BH) * yr**3 / (12*np.pi**2 * T_base)  # s^2
+        rho_BH = np.power(10., log10hc_BH*2) * np.power(work_freqs*yr, -gamma_BH) * yr**3 / (12*np.pi**2 * T_base)   # s^2
         
         log10rho_Model = np.log10(np.sqrt(rho_prim + rho_BH))    # log10(delay/s) = log10(sqrt(rho/s^2))
         #print(log10rho_Model)       

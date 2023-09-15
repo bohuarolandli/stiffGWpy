@@ -17,6 +17,7 @@ eV = (u.eV/(const.c**2)).to(u.g).value     # g*c^2
 GN = const.G.value*1e3                     # cm^3 g^-1 s^-2
 parsec = u.parsec.to(u.cm)                 # cm
 yr = u.yr.to(u.s)                          # seconds in a Julian year
+ln10 = math.log(10)
 
 # Derived
 
