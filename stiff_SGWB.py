@@ -225,10 +225,11 @@ class LCDM_SG(LCDM_SN):
         chosen empirically -- more points around transition!
         """
         fmax = self.f_hor[0]; fmin = min(self.f_hor); fcmb = math.log10(f_piv)
-        if self.derived_param['nt']>0:
+        if self.derived_param['nt']>0:            # Only count modes whose superhorizon power is less than unity
             fmax = min(fmax, (-math.log10(self.derived_param['A_t']))/self.derived_param['nt']+math.log10(f_piv))
             
-        f = fmax+np.zeros(1); f = cat((f, f[-1]-np.logspace(-2,0.5, num=30)), axis=None)
+        f = fmax+np.zeros(1); f = cat((f, f[-1]-np.logspace(-3,-2, num=11)), axis=None)
+        f = cat((f, f[-1]+1e-2-np.logspace(-2,0, num=33)[1:]), axis=None); f = cat((f, f[-1]-np.arange(1,11)*.2), axis=None)
         
         if fmax >= self.f_re: 
             f = f[f>=self.f_re]; f = f[f>=fmax-1]
@@ -272,7 +273,7 @@ class LCDM_SG(LCDM_SN):
         # Do the integration!
         for i in range(len(self.Nv)):
             #ind_int = (M_N_hc[i]>=0) & (self.f<=self.f[0]-3)    # indices of modes whose frequencies are at least 3 decades less than f_inf
-            ind_int = (M_N_hc[i]>=0) & (self.Tensor_power(self.f)<1)   # indices of modes whose superhorizon power is less than unity
+            ind_int = (M_N_hc[i]>=0)
             f_int = np.flip(self.f[ind_int])                           # log10(f/Hz), increasing order
             Ogw_int = np.flip(M_Ogw[i,ind_int]); Opgw_int = np.flip(M_Opgw[i,ind_int]); Oj_int = np.flip(M_Oj[i,ind_int])
 

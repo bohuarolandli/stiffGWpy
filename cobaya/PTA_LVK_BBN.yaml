@@ -46,8 +46,8 @@ params:
       max: 0
     ref:
       dist: uniform
-      loc: -4
-      scale: 2
+      loc: -3
+      scale: 1
     proposal: 0.1
     latex: \log_{10}r
   r:
@@ -59,8 +59,8 @@ params:
       max: 6
     ref:
       dist: uniform
-      loc: -0.1
-      scale: 0.2
+      loc: 0
+      scale: 1
     proposal: 0.01
 #    value: 0
     latex: n_\mathrm{t}
@@ -73,7 +73,7 @@ params:
     ref:
       dist: uniform
       loc: -1.0
-      scale: 3.0
+      scale: 1.0
     proposal: 0.01
     latex: \log_{10}(T_\mathrm{re}/\mathrm{GeV})
     drop: True
@@ -86,7 +86,7 @@ params:
       max: 40
     ref:
       dist: uniform
-      loc: 0
+      loc: 20
       scale: 10
     proposal: 0.1
 #    value: 0
@@ -97,7 +97,7 @@ params:
       max: 3
     ref:
       dist: uniform
-      loc: -1
+      loc: -2
       scale: 2
     proposal: .1
     latex: \log_{10}\kappa_{10}
