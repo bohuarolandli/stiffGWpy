@@ -229,7 +229,8 @@ class LCDM_SG(LCDM_SN):
             fmax = min(fmax, (-math.log10(self.derived_param['A_t']))/self.derived_param['nt']+math.log10(f_piv))
             
         f = fmax+np.zeros(1); f = cat((f, f[-1]-np.logspace(-3,-2, num=11)), axis=None)
-        f = cat((f, f[-1]+1e-2-np.logspace(-2,0, num=35)[1:]), axis=None); f = cat((f, f[-1]-np.arange(1,11)*.2), axis=None)
+        f = cat((f, f[-1]+1e-2-np.logspace(-2,-1, num=21)[1:]), axis=None); f = cat((f, f[-1]+1e-1-np.logspace(-1,0, num=21)[1:]), axis=None); 
+        f = cat((f, f[-1]-np.arange(1,11)*.2), axis=None)
         
         if fmax >= self.f_re: 
             f = f[f>=self.f_re]; f = f[f>=fmax-1]
