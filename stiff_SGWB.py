@@ -228,15 +228,15 @@ class LCDM_SG(LCDM_SN):
         if self.derived_param['nt']>0:            # Only count modes whose superhorizon power is less than unity
             fmax = min(fmax, (-math.log10(self.derived_param['A_t']))/self.derived_param['nt']+math.log10(f_piv))
             
-        f = fmax+np.zeros(1); f = cat((f, f[-1]-np.logspace(-3,-2, num=11)), axis=None)
-        f = cat((f, f[-1]+1e-2-np.logspace(-2,-1, num=21)[1:]), axis=None); f = cat((f, f[-1]+1e-1-np.logspace(-1,0, num=21)[1:]), axis=None); 
+        f = fmax+np.zeros(1); f = cat((f, f[-1]-np.arange(1,21)*1e-3), axis=None); f = cat((f, f[-1]-np.arange(1,16)*2e-3), axis=None)
+        f = cat((f, f[-1]+5e-2-np.logspace(-1.28,-1, num=12)), axis=None); f = cat((f, f[-1]+1e-1-np.logspace(-1,0, num=23)[1:]), axis=None)
         f = cat((f, f[-1]-np.arange(1,11)*.2), axis=None)
         
         if fmax >= self.f_re: 
             f = f[f>=self.f_re]; f = f[f>=fmax-1]
             f = cat((f, np.arange(f[-1]-.5, self.f_re+1, -.5)), axis=None)            # before T_re, during reheating
             f = cat((f, np.arange(f[-1]-.1, self.f_re+.3, -.1)), axis=None)           # approaching f_re
-            f = cat((f, np.arange(f[-1]-.02, self.f_re-.2, -.02)), axis=None)         # through f_re
+            f = cat((f, np.arange(f[-1]-.01, self.f_re-.2, -.01)), axis=None)         # through f_re
             f = cat((f, np.arange(f[-1]-.05, self.f_re-1, -.05)), axis=None);         # away from f_re
             f = cat((f, np.arange(f[-1]-.2, self.f_re-3, -.2)), axis=None)
 
