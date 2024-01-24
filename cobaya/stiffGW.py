@@ -10,6 +10,12 @@ from mpi4py import MPI
 #from pathlib import Path
 
 class stiffGW(Theory):
+    speed = 0.1
+    params = {'Delta_Neff_GW': {'derived': True, 'latex': '\Delta N_\mathrm{eff,GW}'},
+              'Delta_Neff': {'derived': True, 'latex': '\Delta N_\mathrm{eff,tot}'},
+              'log10hc_prim_fyr': {'derived': True, 'latex': '\log_{10}h_{c,\mathrm{prim}}'},
+              'f_end': {'derived': True, 'latex': 'f_\mathrm{end}'},
+             }
     
     def initialize(self):
         """called from __init__ to initialize"""

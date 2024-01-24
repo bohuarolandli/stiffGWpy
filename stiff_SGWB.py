@@ -101,7 +101,7 @@ class LCDM_SG(LCDM_SN):
         using multiprocessing parallelism
         """
         
-        with mp.Pool(processes=8) as pool:
+        with mp.Pool(processes=4) as pool:
             res_it = pool.imap(self.run_SGWB_single, self.f, chunksize=3)
             res = [y for y in res_it]
 
@@ -186,10 +186,14 @@ class LCDM_SG(LCDM_SN):
             # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
 
             # Interpolate on uniform-spaced frequency bins and output
-            self.f_grid = np.arange(-18.5,12.5,.25)
+            self.f_grid = np.arange(-18.5,6.5,.25)
             self.log10OmegaGW_grid = -40 * np.ones_like(self.f_grid)
             Ogw_spl = interpolate.CubicSpline(np.flip(self.f), np.flip(self.log10OmegaGW))
+            cond = self.f<self.f[0]-.1
+            Ogw_lin = interpolate.CubicSpline(np.flip(self.f[cond]), np.flip(self.log10OmegaGW[cond]), bc_type='natural')
+            add_boundary_knots(Ogw_lin)
             self.log10OmegaGW_grid[self.f_grid<=self.f[0]] = Ogw_spl(self.f_grid[self.f_grid<=self.f[0]])
+            self.log10OmegaGW_grid[self.f_grid>self.f[0]] = Ogw_lin(self.f_grid[self.f_grid>self.f[0]], nu=0)
                 
             
             ###  Extra radiation (e.g., SGWB) parameterized as kappa_rad(T_i) for AlterBBN
@@ -229,14 +233,16 @@ class LCDM_SG(LCDM_SN):
             fmax = min(fmax, (-math.log10(self.derived_param['A_t']))/self.derived_param['nt']+math.log10(f_piv))
             
         f = fmax+np.zeros(1); f = cat((f, f[-1]-np.arange(1,21)*1e-3), axis=None); f = cat((f, f[-1]-np.arange(1,16)*2e-3), axis=None)
-        f = cat((f, f[-1]+5e-2-np.logspace(-1.28,-1, num=12)), axis=None); f = cat((f, f[-1]+1e-1-np.logspace(-1,0, num=23)[1:]), axis=None)
+        f = cat((f, f[-1]+5e-2-np.logspace(-1.28,-1, num=15)), axis=None); f = cat((f, f[-1]+1e-1-np.logspace(-1,0, num=35)[1:]), axis=None)
         f = cat((f, f[-1]-np.arange(1,11)*.2), axis=None)
         
         if fmax >= self.f_re: 
-            f = f[f>=self.f_re]; f = f[f>=fmax-1]
-            f = cat((f, np.arange(f[-1]-.5, self.f_re+1, -.5)), axis=None)            # before T_re, during reheating
-            f = cat((f, np.arange(f[-1]-.1, self.f_re+.3, -.1)), axis=None)           # approaching f_re
-            f = cat((f, np.arange(f[-1]-.01, self.f_re-.2, -.01)), axis=None)         # through f_re
+            f = f[f>=self.f_re]; f = f[f>=fmax-.5]
+            f = cat((f, np.arange(f[-1]-.5, self.f_re+1.5, -.5)), axis=None)          # before T_re, during reheating
+            f = cat((f, np.arange(f[-1]-.1, self.f_re+.8, -.1)), axis=None);          # approaching f_re
+            f = cat((f, np.arange(f[-1]-.05, self.f_re+.4, -.05)), axis=None)
+            f = cat((f, np.arange(f[-1]-.01, self.f_re-.2, -.01)), axis=None);        # through f_re
+            f = cat((f, np.arange(f[-1]-.02, self.f_re-.5, -.02)), axis=None)
             f = cat((f, np.arange(f[-1]-.05, self.f_re-1, -.05)), axis=None);         # away from f_re
             f = cat((f, np.arange(f[-1]-.2, self.f_re-3, -.2)), axis=None)
 
@@ -291,3 +297,33 @@ class LCDM_SG(LCDM_SN):
             #spline_pgw = interpolate.InterpolatedUnivariateSpline(f_int, Opgw_int)   # Opgw can be negative
             #self.g2[i] = integrate.simpson(spline_gw(fx), fx) * math.log(10)         
             #self.w2[i] = integrate.simpson(spline_pgw(fx), fx) * math.log(10)
+
+
+def add_boundary_knots(spline):
+    """
+    Add knots infinitesimally to the left and right.
+
+    Additional intervals are added to have zero 2nd and 3rd derivatives,
+    and to maintain the first derivative from whatever boundary condition
+    was selected. The spline is modified in place.
+    """
+    # determine the slope at the left edge
+    leftx = spline.x[0]
+    lefty = spline(leftx)
+    leftslope = spline(leftx, nu=1)
+
+    # add a new breakpoint just to the left and use the
+    # known slope to construct the PPoly coefficients.
+    leftxnext = np.nextafter(leftx, leftx - 1)
+    leftynext = lefty + leftslope*(leftxnext - leftx)
+    leftcoeffs = np.array([0, 0, leftslope, leftynext])
+    spline.extend(leftcoeffs[..., None], np.r_[leftxnext])
+
+    # repeat with additional knots to the right
+    rightx = spline.x[-1]
+    righty = spline(rightx)
+    rightslope = spline(rightx,nu=1)
+    rightxnext = np.nextafter(rightx, rightx + 1)
+    rightynext = righty + rightslope * (rightxnext - rightx)
+    rightcoeffs = np.array([0, 0, rightslope, rightynext])
+    spline.extend(rightcoeffs[..., None], np.r_[rightxnext])

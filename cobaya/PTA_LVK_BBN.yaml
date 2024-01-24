@@ -8,12 +8,12 @@ theory:
     python_path: .
 
 likelihood:
-#  NANOGrav:
-#    python_path: ./likelihoods/PTA
-  IPTA:
-    python_path: ./likelihoods/PTA
-  LVK_SGWB_CC:
-    python_path: ./likelihoods/LIGO_SGWB
+  PTA.NANOGrav:
+    python_path: ./likelihoods
+#  PTA.IPTA:
+#    python_path: ./likelihoods
+  LIGO_SGWB.LVK_SGWB_CC:
+    python_path: ./likelihoods
   Helium:      # theoretical uncertainty from AlterBBN, observational uncertainty from PDG2022
     external: 'lambda _self=True: -.5 * (_self.provider.get_result("Y_p") - .245)**2/(0.0003**2 + .003**2)'
     requires: Y_p
@@ -131,8 +131,8 @@ sampler:
     learn_proposal_Rminus1_max_early: 30.0
     learn_proposal_Rminus1_min: 0.0
 
-#debug: logs/EPTA_LVK_BBN.debug
+debug: logs/NG_LVK_BBN.debug
 #debug: True
 #force: True
 resume: True
-output: chains/EPTA_LVK_BBN
+output: chains/NG_LVK_BBN
