@@ -13,7 +13,8 @@
 
 path: null
 #sample_file: likelihoods/PTA/IPTAdr2/IPTA_dr2_low_H02.dat
-sample_file: likelihoods/PTA/EPTAdr2/EPTA_dr2new.dat
+#sample_file: likelihoods/PTA/EPTAdr2/EPTA_dr2new.dat
+sample_file: likelihoods/PTA/EPTAdr2/EPTA_dr2new_mock.dat
 #freq_file: likelihoods/PTA/IPTAdr2/crn_frequencies.txt
 freq_file: likelihoods/PTA/EPTAdr2/freqs_dr2new.txt
 Nfreqs: 9

@@ -12,7 +12,8 @@
 # and do not need to be specified in the defaults [ClassName].yaml file, e.g., the computational speed 
 
 path: null
-kde_file: likelihoods/PTA/NANOGrav15yr/density.npy
+#kde_file: likelihoods/PTA/NANOGrav15yr/density.npy
+kde_file: likelihoods/PTA/NANOGrav15yr/density_mock.npy
 log10rhogrid_file: likelihoods/PTA/NANOGrav15yr/log10rhogrid.npy
 freq_file: likelihoods/PTA/NANOGrav15yr/freqs.npy
 Nfreqs: 14
