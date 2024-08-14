@@ -233,16 +233,16 @@ class LCDM_SG(LCDM_SN):
             fmax = min(fmax, (-math.log10(self.derived_param['A_t']))/self.derived_param['nt']+math.log10(f_piv))
             
         f = fmax+np.zeros(1); f = cat((f, f[-1]-np.arange(1,25)*1e-3), axis=None); f = cat((f, f[-1]-np.arange(1,14)*2e-3), axis=None)
-        f = cat((f, f[-1]+5e-2-np.logspace(-1.28,-1, num=17)), axis=None); f = cat((f, f[-1]+1e-1-np.logspace(-1,0, num=37)[1:]), axis=None)
+        f = cat((f, f[-1]+5e-2-np.logspace(-1.28,-1, num=17)), axis=None); f = cat((f, f[-1]+1e-1-np.logspace(-1,0, num=38)[1:]), axis=None)
         f = cat((f, f[-1]-np.arange(1,11)*.2), axis=None)
         
         if fmax >= self.f_re: 
-            f = f[f>=self.f_re]; f = f[f>=fmax-.4]
+            f = f[np.logical_or(f>=self.f_re+.2, f>=fmax)]; f = f[f>=fmax-.4]
             f = cat((f, np.arange(f[-1]-.5, self.f_re+1.5, -.5)), axis=None)          # before T_re, during reheating
             f = cat((f, np.arange(f[-1]-.1, self.f_re+.8, -.1)), axis=None);          # approaching f_re
             f = cat((f, np.arange(f[-1]-.05, self.f_re+.4, -.05)), axis=None)
-            f = cat((f, np.arange(f[-1]-.01, self.f_re-.2, -.01)), axis=None);        # through f_re
-            f = cat((f, np.arange(f[-1]-.02, self.f_re-.5, -.02)), axis=None)
+            f = cat((f, np.arange(f[-1]-.01, self.f_re-.22, -.01)), axis=None);        # through f_re
+            f = cat((f, np.arange(f[-1]-.022, self.f_re-.5, -.02)), axis=None)
             f = cat((f, np.arange(f[-1]-.05, self.f_re-1, -.05)), axis=None);         # away from f_re
             f = cat((f, np.arange(f[-1]-.2, self.f_re-3, -.2)), axis=None)
 
