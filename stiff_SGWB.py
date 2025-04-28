@@ -186,14 +186,14 @@ class LCDM_SG(LCDM_SN):
             # Ignoring the negative super-horizon contribution from Omega_j, for the moment...
 
             # Interpolate on uniform-spaced frequency bins and output
-            self.f_grid = np.arange(-18.5,6.5,.25)
-            self.log10OmegaGW_grid = -40 * np.ones_like(self.f_grid)
-            Ogw_spl = interpolate.CubicSpline(np.flip(self.f), np.flip(self.log10OmegaGW))
-            cond = self.f<self.f[0]-.1
-            Ogw_lin = interpolate.CubicSpline(np.flip(self.f[cond]), np.flip(self.log10OmegaGW[cond]), bc_type='natural')
-            add_boundary_knots(Ogw_lin)
-            self.log10OmegaGW_grid[self.f_grid<=self.f[0]] = Ogw_spl(self.f_grid[self.f_grid<=self.f[0]])
-            self.log10OmegaGW_grid[self.f_grid>self.f[0]] = Ogw_lin(self.f_grid[self.f_grid>self.f[0]], nu=0)
+            #self.f_grid = np.arange(-18.5,6.5,.25)
+            #self.log10OmegaGW_grid = -40 * np.ones_like(self.f_grid)
+            #Ogw_spl = interpolate.CubicSpline(np.flip(self.f), np.flip(self.log10OmegaGW))
+            #cond = self.f<self.f[0]-.1
+            #Ogw_lin = interpolate.CubicSpline(np.flip(self.f[cond]), np.flip(self.log10OmegaGW[cond]), bc_type='natural')
+            #add_boundary_knots(Ogw_lin)
+            #self.log10OmegaGW_grid[self.f_grid<=self.f[0]] = Ogw_spl(self.f_grid[self.f_grid<=self.f[0]])
+            #self.log10OmegaGW_grid[self.f_grid>self.f[0]] = Ogw_lin(self.f_grid[self.f_grid>self.f[0]], nu=0)
                 
             
             ###  Extra radiation (e.g., SGWB) parameterized as kappa_rad(T_i) for AlterBBN
