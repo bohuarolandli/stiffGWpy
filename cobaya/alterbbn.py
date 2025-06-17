@@ -16,7 +16,7 @@ class alterbbn(Theory):
     def initialize(self):
         """called from __init__ to initialize"""
         self.model_uid = str(uuid.uuid1())      
-        alterbbn_path = os.path.dirname(__file__) + '/../../../alterbbn_v2.2/'
+        alterbbn_path = os.path.dirname(__file__) + '/../../../bbn_codes/alterbbn_v2.2/'
 #        alterbbn_path = '/work/bohuali/alterbbn_v2.2/'
         alter_stiff = load_module('alter_stiff', path=alterbbn_path)
         self.BBNstiff_model = alter_stiff.BBN_stiff(self.model_uid)    
@@ -41,7 +41,7 @@ class alterbbn(Theory):
         Return dictionary of quantities that are always needed by this component 
         and should be calculated by another component or provided by input parameters.
         """
-        return {'kappa_s': None, 'kappa_r': None, 'Omega_bh2': None,}
+        return {'kappa_s': None, 'kappa_r': None, 'Omega_bh2': None, 'tau_n': None,}
 
 #    def must_provide(self, **requirements):
 #        if 'A' in requirements:
@@ -68,11 +68,12 @@ class alterbbn(Theory):
 
         try:
             kappa_s = self.provider.get_result('kappa_s')
-            kappa_r = self.provider.get_result('kappa_r') 
-            self.BBNstiff_model.calculateAbundances(kappa_s, kappa_r, args['Omega_bh2'], 
+            kappa_r = self.provider.get_result('kappa_r')
+            tau_n = self.provider.get_result('tau_n')
+            self.BBNstiff_model.calculateAbundances(kappa_s, kappa_r, args['Omega_bh2'], tau = tau_n,
                                                    failsafe = 3, fast = True)
         except AttributeError as e:
-            self.BBNstiff_model.calculateAbundances(args['kappa_s'], args['kappa_r'], args['Omega_bh2'],
+            self.BBNstiff_model.calculateAbundances(args['kappa_s'], args['kappa_r'], args['Omega_bh2'], tau = args['tau_n'],
                                                    failsafe = 3, fast = True)
         
         state['Y_p'] = self.BBNstiff_model.abundances[0]        # Y_p
